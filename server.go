@@ -22,9 +22,13 @@ type (
 		QType  QType
 		QClass QClass
 	}
+	Msg struct {
+		Header  Header
+		Queries []Query
+	}
 )
 
-func readHeader(data []byte, pos int) (Header, int) {
+func parseHeader(data []byte, pos int) (Header, int) {
 	header := Header{}
 	header.ID, pos = readUint16(data, pos)
 	header.Flags, pos = readUint16(data, pos)
@@ -32,7 +36,26 @@ func readHeader(data []byte, pos int) (Header, int) {
 	header.ANCount, pos = readUint16(data, pos)
 	header.NSCount, pos = readUint16(data, pos)
 	header.ARCount, pos = readUint16(data, pos)
+
+	// TODO(alex): remove.
+	d, _ := json.Marshal(header)
+	fmt.Printf("HEADER: %s\n", d)
+
 	return header, pos
+}
+
+func parseQueries(header Header, data []byte, pos int) ([]Query, int) {
+	queries := make([]Query, header.QDCount)
+	for i := range queries {
+		queries[i].QName, pos = readName(data, pos)
+		queries[i].QType, pos = readQType(data, pos)
+		queries[i].QClass, pos = readQClass(data, pos)
+
+		// TODO(alex): remove.
+		d, _ := json.Marshal(queries[i])
+		fmt.Printf("QUERY %d: %s\n", i, d)
+	}
+	return queries, pos
 }
 
 func readQType(data []byte, pos int) (QType, int) {
@@ -72,20 +95,17 @@ func main() {
 
 	data := make([]byte, 576)
 	n, addr, _ := conn.ReadFromUDP(data)
+
+	// TODO(alex): remove
 	fmt.Printf("ADDR: %s\n", addr)
 	fmt.Printf("RAW DATA: %b\n", data[0:n])
 
+	parseMessage(data)
+}
+func parseMessage(data []byte) Msg {
 	var pos int
-	header, pos := readHeader(data, pos)
-
-	d, _ := json.Marshal(header)
-	fmt.Printf("HEADER: %s\n", d)
-
-	q := Query{}
-	q.QName, pos = readName(data, pos)
-	q.QType, pos = readQType(data, pos)
-	q.QClass, pos = readQClass(data, pos)
-
-	d, _ = json.Marshal(q)
-	fmt.Printf("MSG: %s\n", d)
+	msg := Msg{}
+	msg.Header, pos = parseHeader(data, pos)
+	msg.Queries, pos = parseQueries(msg.Header, data, pos)
+	return msg
 }
