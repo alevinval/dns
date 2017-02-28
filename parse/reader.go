@@ -1,88 +1,88 @@
 package parse
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
 )
 
-type MessageReader struct {
+type Reader struct {
 	data []byte
-	pos  int
+	i    int
+
+	nameBuffer bytes.Buffer
 }
 
-func New(b []byte) *MessageReader {
-	return &MessageReader{data: b}
+func New(b []byte) *Reader {
+	return &Reader{data: b}
 }
 
-func (mr *MessageReader) Read() *Msg {
-	msg := &Msg{}
-	mr.readMessage()
+func (r *Reader) ReadMessage() *Msg {
+	msg := &Msg{Header: Header{}}
+	r.readHeader(&msg.Header)
+
+	msg.Queries = make([]Query, msg.Header.QDCount)
+	r.readQueries(msg.Queries)
+
 	return msg
 }
 
-func (mr *MessageReader) readQType() QType {
-	n := mr.readUint16()
-	return QType(n)
+func (r *Reader) readQType() QType {
+	return QType(r.readOctetPair())
 }
 
-func (mr *MessageReader) readQClass() QClass {
-	n := mr.readUint16()
-	return QClass(n)
+func (r *Reader) readQClass() QClass {
+	return QClass(r.readOctetPair())
 }
 
-func (mr *MessageReader) readUint16() uint16 {
-	ini := mr.pos
-	mr.pos += 2
-	return binary.BigEndian.Uint16(mr.data[ini:mr.pos])
-}
-
-func (mr *MessageReader) readMessage() Msg {
-	msg := Msg{}
-	msg.Header = mr.readHeader()
-	msg.Queries = mr.readQueries(msg.Header)
-	return msg
-}
-
-func (mr *MessageReader) readHeader() Header {
-	header := Header{}
-	header.ID = mr.readUint16()
-	header.Flags = mr.readUint16()
-	header.QDCount = mr.readUint16()
-	header.ANCount = mr.readUint16()
-	header.NSCount = mr.readUint16()
-	header.ARCount = mr.readUint16()
+func (r *Reader) readHeader(header *Header) {
+	header.ID = r.readOctetPair()
+	header.Flags = r.readOctetPair()
+	header.QDCount = r.readOctetPair()
+	header.ANCount = r.readOctetPair()
+	header.NSCount = r.readOctetPair()
+	header.ARCount = r.readOctetPair()
 
 	// TODO(alex): remove.
 	d, _ := json.Marshal(header)
 	fmt.Printf("HEADER: %s\n", d)
-
-	return header
 }
 
-func (mr *MessageReader) readQueries(header Header) []Query {
-	queries := make([]Query, header.QDCount)
+func (r *Reader) readQueries(queries []Query) {
 	for i := range queries {
-		queries[i].QName = mr.readName()
-		queries[i].QType = mr.readQType()
-		queries[i].QClass = mr.readQClass()
+		queries[i].QName = r.readName()
+		queries[i].QType = r.readQType()
+		queries[i].QClass = r.readQClass()
 
 		// TODO(alex): remove.
 		d, _ := json.Marshal(queries[i])
 		fmt.Printf("QUERY %d: %s\n", i, d)
 	}
-	return queries
 }
 
-func (mr *MessageReader) readName() string {
-	var name string
-	for mr.data[mr.pos] != 0 {
-		labelLength := int(mr.data[mr.pos])
-		mr.pos++
-		label := mr.data[mr.pos : mr.pos+labelLength]
-		mr.pos += labelLength
-		name += string(label) + "."
+func (r *Reader) readName() string {
+	r.nameBuffer.Reset()
+	for {
+		currentByte := r.data[r.i]
+		r.i++
+
+		// On null termination, the label is finished.
+		if currentByte == 0 {
+			break
+		}
+
+		// Otherwise, current byte is the length of the label. Read it.
+		ini := r.i
+		r.i += int(currentByte)
+		r.nameBuffer.Write(r.data[ini:r.i])
+		r.nameBuffer.Write([]byte("."))
 	}
-	mr.pos++
-	return name
+	return r.nameBuffer.String()
+}
+
+func (r *Reader) readOctetPair() uint16 {
+	ini := r.i
+	r.i += 2
+	return binary.BigEndian.Uint16(r.data[ini:r.i])
 }

@@ -25,5 +25,5 @@ func main() {
 	fmt.Printf("RAW DATA: %b\n", data[0:n])
 
 	p := parse.New(data)
-	p.Read()
+	p.ReadMessage()
 }
