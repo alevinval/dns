@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 
+	"github.com/go-rfc/dns/debug"
 	"github.com/go-rfc/dns/parse"
 )
 
@@ -18,12 +18,10 @@ func main() {
 	log.Printf("server listening on %s", addr)
 
 	data := make([]byte, 576)
-	n, addr, _ := conn.ReadFromUDP(data)
-
-	// TODO(alex): remove
-	fmt.Printf("ADDR: %s\n", addr)
-	fmt.Printf("RAW DATA: %b\n", data[0:n])
-
-	p := parse.New(data)
-	p.ReadMessage()
+	for {
+		n, _, _ := conn.ReadFromUDP(data)
+		p := parse.New(data[:n])
+		msg := p.ReadMessage()
+		debug.PrintMessage(msg)
+	}
 }

@@ -3,8 +3,6 @@ package parse
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
-	"fmt"
 )
 
 type Reader struct {
@@ -43,10 +41,6 @@ func (r *Reader) readHeader(header *Header) {
 	header.ANCount = r.readOctetPair()
 	header.NSCount = r.readOctetPair()
 	header.ARCount = r.readOctetPair()
-
-	// TODO(alex): remove.
-	d, _ := json.Marshal(header)
-	fmt.Printf("HEADER: %s\n", d)
 }
 
 func (r *Reader) readQueries(queries []Query) {
@@ -54,10 +48,6 @@ func (r *Reader) readQueries(queries []Query) {
 		queries[i].QName = r.readName()
 		queries[i].QType = r.readQType()
 		queries[i].QClass = r.readQClass()
-
-		// TODO(alex): remove.
-		d, _ := json.Marshal(queries[i])
-		fmt.Printf("QUERY %d: %s\n", i, d)
 	}
 }
 
