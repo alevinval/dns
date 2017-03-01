@@ -1,34 +1,49 @@
 package dns
 
-import "strconv"
+import "fmt"
 
 type (
 	QClass uint16
 	Class  uint16
 )
 
+const (
+	ClassANY QClass = 255
+)
+
+const (
+	ClassIN Class = 1 + iota
+	ClassCS
+	ClassCH
+	ClassHS
+)
+
+var (
+	qClassToString = map[QClass]string{
+		ClassANY: "ANY",
+	}
+	classToString = map[Class]string{
+		ClassIN: "IN",
+		ClassCS: "CS",
+		ClassCH: "CH",
+		ClassHS: "HS",
+	}
+)
+
 func (qc QClass) String() string {
-	switch qc {
-	case 255:
-		return "*"
-	default:
+	s, ok := qClassToString[qc]
+	if !ok {
 		return Class(qc).String()
 	}
+	return s
 }
 
 func (c Class) String() string {
-	switch c {
-	case 1:
-		return "IN"
-	case 2:
-		return "CS"
-	case 3:
-		return "CH"
-	case 4:
-		return "HS"
-	default:
-		return "UNKNOWN: " + strconv.Itoa(int(c))
+	s, ok := classToString[c]
+	if !ok {
+		return fmt.Sprintf("unknown: %d", c)
 	}
+	return s
 }
 
 func (qc QClass) MarshalText() ([]byte, error) {
