@@ -19,9 +19,11 @@ func main() {
 
 	data := make([]byte, 576)
 	for {
-		n, _, _ := conn.ReadFromUDP(data)
+		n, peer, _ := conn.ReadFromUDP(data)
 		r := dns.NewReader(data[:n])
 		msg := r.ReadMessage()
 		debug.PrintMessage(msg)
+
+		conn.WriteToUDP(data, peer)
 	}
 }
