@@ -1,64 +1,80 @@
 package dns
 
-import "strconv"
+import "fmt"
 
 type (
 	QType int16
 	Type  int16
 )
 
-func (qt QType) String() string {
-	switch qt {
-	case 252:
-		return "AXFR"
-	case 253:
-		return "MAILB"
-	case 254:
-		return "MAILA"
-	case 255:
-		return "*"
-	default:
-		return Type(qt).String()
+const (
+	QTypeAXFR QType = 252 + iota
+	QTypeMAILB
+	QTypeMAILA
+	QTypeALL
+)
+
+const (
+	TypeA Type = 1 + iota
+	TypeNS
+	TypeMD
+	TypeMF
+	TypeCNAME
+	TypeSOA
+	TypeMB
+	TypeMG
+	TypeMR
+	TypeNULL
+	TypeWKS
+	TypePTR
+	TypeHINFO
+	TypeMINFO
+	TypeMX
+	TypeTXT
+)
+
+var (
+	qTypeToString = map[QType]string{
+		QTypeAXFR:  "AXFR",
+		QTypeMAILB: "MAILB",
+		QTypeMAILA: "MAILA",
+		QTypeALL:   "ALL",
 	}
+
+	typeToString = map[Type]string{
+		TypeA:     "A",
+		TypeNS:    "NS",
+		TypeMD:    "MD",
+		TypeMF:    "MF",
+		TypeCNAME: "CNAME",
+		TypeSOA:   "SOA",
+		TypeMB:    "MB",
+		TypeMG:    "MG",
+		TypeMR:    "MR",
+		TypeNULL:  "NULL",
+		TypeWKS:   "WKS",
+		TypePTR:   "PTR",
+		TypeHINFO: "HINFO",
+		TypeMINFO: "MINFO",
+		TypeMX:    "MX",
+		TypeTXT:   "TXT",
+	}
+)
+
+func (qt QType) String() string {
+	s, ok := qTypeToString[qt]
+	if ok {
+		return s
+	}
+	return Type(qt).String()
 }
 
 func (t Type) String() string {
-	switch t {
-	case 1:
-		return "A"
-	case 2:
-		return "NS"
-	case 3:
-		return "MD"
-	case 4:
-		return "MF"
-	case 5:
-		return "CNAME"
-	case 6:
-		return "SOA"
-	case 7:
-		return "MB"
-	case 8:
-		return "MG"
-	case 9:
-		return "MR"
-	case 10:
-		return "NULL"
-	case 11:
-		return "WKS"
-	case 12:
-		return "PTR"
-	case 13:
-		return "HINFO"
-	case 14:
-		return "MINFO"
-	case 15:
-		return "MX"
-	case 16:
-		return "TXT"
-	default:
-		return "UNKNOWN: " + strconv.Itoa(int(t))
+	s, ok := typeToString[t]
+	if ok {
+		return s
 	}
+	return fmt.Sprintf("invalid(%d)", t)
 }
 
 func (qt QType) MarshalText() ([]byte, error) {
