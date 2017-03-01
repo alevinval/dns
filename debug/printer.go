@@ -14,5 +14,4 @@ func PrintMessage(msg *parse.Msg) {
 		d, _ = json.Marshal(q)
 		fmt.Printf("QUERY %d:\n  %s\n", i, d)
 	}
-
 }
