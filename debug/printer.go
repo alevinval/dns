@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-rfc/dns/parse"
+	"github.com/go-rfc/dns"
 )
 
-func PrintMessage(msg *parse.Msg) {
+func PrintMessage(msg *dns.Msg) {
 	d, _ := json.Marshal(msg.Header)
 	fmt.Printf("HEADER:\n  %s\n", d)
 	for i, q := range msg.Queries {

@@ -1,4 +1,4 @@
-package parse
+package dns
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ type Reader struct {
 	nameBuffer bytes.Buffer
 }
 
-func New(b []byte) *Reader {
+func NewReader(b []byte) *Reader {
 	return &Reader{data: b}
 }
 

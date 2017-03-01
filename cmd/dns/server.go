@@ -4,8 +4,8 @@ import (
 	"log"
 	"net"
 
+	"github.com/go-rfc/dns"
 	"github.com/go-rfc/dns/debug"
-	"github.com/go-rfc/dns/parse"
 )
 
 func main() {
@@ -20,8 +20,8 @@ func main() {
 	data := make([]byte, 576)
 	for {
 		n, _, _ := conn.ReadFromUDP(data)
-		p := parse.New(data[:n])
-		msg := p.ReadMessage()
+		r := dns.NewReader(data[:n])
+		msg := r.ReadMessage()
 		debug.PrintMessage(msg)
 	}
 }

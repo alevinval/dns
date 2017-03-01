@@ -1,4 +1,4 @@
-package parse
+package dns
 
 type (
 	Header struct {
