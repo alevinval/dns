@@ -36,7 +36,26 @@ func (r *Reader) readQClass() QClass {
 
 func (r *Reader) readHeader(header *Header) {
 	header.ID = r.readOctetPair()
-	header.Flags = r.readOctetPair()
+
+	flags := r.readOctetPair()
+	maskQR := uint16(1 << 15)
+	maskOpCode := uint16(1 << 11)
+	maskAA := uint16(1 << 10)
+	maskTC := uint16(1 << 9)
+	maskRD := uint16(1 << 8)
+	maskRA := uint16(1 << 7)
+	maskZ := uint16(7 << 4)
+	maskRCode := uint16(16)
+
+	header.QR = (flags & maskQR >> 15) == 1
+	header.OpCode = OpCode(flags & maskOpCode >> 11)
+	header.AA = (flags & maskAA >> 10) == 1
+	header.TC = (flags & maskTC >> 9) == 1
+	header.RD = (flags & maskRD >> 8) == 1
+	header.RA = (flags & maskRA >> 7) == 1
+	header.Z = byte(flags & maskZ)
+	header.RCode = byte(flags & maskRCode)
+
 	header.QDCount = r.readOctetPair()
 	header.ANCount = r.readOctetPair()
 	header.NSCount = r.readOctetPair()

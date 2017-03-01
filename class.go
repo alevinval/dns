@@ -41,7 +41,7 @@ func (qc QClass) String() string {
 func (c Class) String() string {
 	s, ok := classToString[c]
 	if !ok {
-		return fmt.Sprintf("unknown: %d", c)
+		return fmt.Sprintf("invalid: %d", c)
 	}
 	return s
 }
