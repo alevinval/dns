@@ -21,7 +21,7 @@ func (o OpCode) String() string {
 	if ok {
 		return s
 	}
-	return fmt.Sprintf("invalid: %d", o)
+	return fmt.Sprintf("invalid(%d)", o)
 }
 
 func (o OpCode) MarshalText() ([]byte, error) {

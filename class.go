@@ -32,18 +32,19 @@ var (
 
 func (qc QClass) String() string {
 	s, ok := qClassToString[qc]
-	if !ok {
-		return Class(qc).String()
+	if ok {
+		return s
 	}
-	return s
+	return Class(qc).String()
 }
 
 func (c Class) String() string {
 	s, ok := classToString[c]
-	if !ok {
-		return fmt.Sprintf("invalid: %d", c)
+	if ok {
+		return s
 	}
-	return s
+	return fmt.Sprintf("invalid(%d)", c)
+
 }
 
 func (qc QClass) MarshalText() ([]byte, error) {
