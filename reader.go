@@ -16,14 +16,14 @@ func NewReader(b []byte) *Reader {
 	return &Reader{data: b}
 }
 
-func (r *Reader) ReadMessage() *Msg {
+func (r *Reader) ReadMessage() (*Msg, int) {
 	msg := &Msg{Header: Header{}}
 	r.readHeader(&msg.Header)
 
 	msg.Queries = make([]Query, msg.Header.QDCount)
 	r.readQueries(msg.Queries)
 
-	return msg
+	return msg, r.i
 }
 
 func (r *Reader) readQType() QType {

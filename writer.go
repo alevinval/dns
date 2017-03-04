@@ -1,23 +1,43 @@
 package dns
 
-import "strings"
+import (
+	"io"
+	"strings"
+)
 
 type Writer struct {
-	msg  *Msg
-	data []byte
-	i    int
+	msg *Msg
+	b   []byte
+	i   int
 }
 
-// TODO: this is so wip.
 func NewWriter(msg *Msg) *Writer {
 	return &Writer{msg: msg}
 }
 
 func (w *Writer) Bytes() []byte {
-	return w.data[:w.i]
+	return w.b[:w.i]
 }
 
-func (w *Writer) Write() {
+func (w *Writer) Write(b []byte) (int, error) {
+	if w.i == 0 {
+		w.writeMsgToBuffer()
+	}
+	if len(b) < w.i {
+		return w.i, io.ErrShortBuffer
+	}
+	copy(b, w.Bytes())
+	return w.i, nil
+}
+
+func (w *Writer) WriteTo(dst io.Writer) (int, error) {
+	if w.i == 0 {
+		w.writeMsgToBuffer()
+	}
+	return dst.Write(w.Bytes())
+}
+
+func (w *Writer) writeMsgToBuffer() {
 	w.writeHeader()
 	w.writeQueries()
 }
@@ -65,14 +85,14 @@ func (w *Writer) writeName(name string) {
 	labels := strings.Split(name, ".")
 	for _, label := range labels {
 		labelLen := len(label)
-		w.data = append(w.data, byte(labelLen))
-		w.data = append(w.data, label...)
+		w.b = append(w.b, byte(labelLen))
+		w.b = append(w.b, label...)
 		w.i += 1 + labelLen
 	}
 }
 
 func (w *Writer) writeOctetPair(v uint16) {
-	w.data = append(w.data, byte(v>>8))
-	w.data = append(w.data, byte(v))
+	w.b = append(w.b, byte(v>>8))
+	w.b = append(w.b, byte(v))
 	w.i += 2
 }
