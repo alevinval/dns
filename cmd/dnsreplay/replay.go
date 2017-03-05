@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"io"
 	"log"
 	"os"
 
@@ -23,22 +22,12 @@ func main() {
 	}
 	defer f.Close()
 
-	var offset, n int
-	err = nil
-	data := make([]byte, 512)
-	for err != io.EOF {
-		if offset >= n-12 {
-			offset = 0
-			n, err = f.Read(data)
-			if err != nil {
-				continue
-			}
+	fr := dns.NewReader(f)
+	var msg *dns.Msg
+	for err == nil {
+		msg, err = fr.Read()
+		if err == nil {
+			debug.PrintMessage(msg)
 		}
-		// TODO: fix reader to check whether message can be read from a given buffer
-		// without failing with out of bounds.
-		r := dns.NewReader(data[offset:n])
-		msg, n2 := r.ReadMessage()
-		debug.PrintMessage(msg)
-		offset += n2
 	}
 }

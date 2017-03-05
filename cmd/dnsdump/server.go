@@ -34,8 +34,8 @@ func main() {
 	data := make([]byte, 576)
 	for {
 		n, peer, _ := conn.ReadFromUDP(data)
-		r := dns.NewReader(data[:n])
-		msg, _ := r.ReadMessage()
+		r := dns.NewUnpacker(data[:n])
+		msg, _, _ := r.Unpack()
 		w := dns.NewWriter(msg)
 		w.WriteTo(f)
 		log.Printf("served request for %q from %s\n", msg.Queries[0].QName, peer.String())

@@ -1,88 +1,65 @@
 package dns
 
 import (
-	"bytes"
-	"encoding/binary"
+	"io"
 )
 
 type Reader struct {
-	data []byte
-	i    int
+	i, n               int
+	buffer, bufferSwap []byte
 
-	nameBuffer bytes.Buffer
+	src      io.Reader
+	unpacker *Unpacker
 }
 
-func NewReader(b []byte) *Reader {
-	return &Reader{data: b}
-}
-
-func (r *Reader) ReadMessage() (*Msg, int) {
-	msg := &Msg{Header: Header{}}
-	r.readHeader(&msg.Header)
-
-	msg.Queries = make([]Query, msg.Header.QDCount)
-	r.readQueries(msg.Queries)
-
-	return msg, r.i
-}
-
-func (r *Reader) readQType() QType {
-	return QType(r.readOctetPair())
-}
-
-func (r *Reader) readQClass() QClass {
-	return QClass(r.readOctetPair())
-}
-
-func (r *Reader) readHeader(header *Header) {
-	header.ID = r.readOctetPair()
-
-	flags := r.readOctetPair()
-	header.QR = (flags & maskQR >> maskQROffset) == 1
-	header.OpCode = OpCode(flags & maskOpCode >> maskOpCodeOffset)
-	header.AA = (flags & maskAA >> maskAAOffset) == 1
-	header.TC = (flags & maskTC >> maskTCOffset) == 1
-	header.RD = (flags & maskRD >> maskRDOffset) == 1
-	header.RA = (flags & maskRA >> maskRAOffset) == 1
-	header.Z = byte(flags & maskZ >> maskZOffset)
-	header.RCode = byte(flags & maskRCode)
-
-	header.QDCount = r.readOctetPair()
-	header.ANCount = r.readOctetPair()
-	header.NSCount = r.readOctetPair()
-	header.ARCount = r.readOctetPair()
-}
-
-func (r *Reader) readQueries(queries []Query) {
-	for i := range queries {
-		queries[i].QName = r.readName()
-		queries[i].QType = r.readQType()
-		queries[i].QClass = r.readQClass()
+func NewReader(r io.Reader) *Reader {
+	return &Reader{
+		buffer:     make([]byte, 20),
+		bufferSwap: make([]byte, 20),
+		unpacker:   NewUnpacker(nil),
+		src:        r,
 	}
 }
-
-func (r *Reader) readName() string {
-	r.nameBuffer.Reset()
+func (r *Reader) Read() (msg *Msg, err error) {
+	var n int
 	for {
-		currentByte := r.data[r.i]
-		r.i++
-
-		// On null termination, the label is finished.
-		if currentByte == 0 {
-			break
+		// Read buffer to parse.
+		n, err = r.src.Read(r.buffer[r.n:])
+		r.n += n
+		if err != nil {
+			return
 		}
 
-		// Otherwise, current byte is the length of the label. Read it.
-		ini := r.i
-		r.i += int(currentByte)
-		r.nameBuffer.Write(r.data[ini:r.i])
-		r.nameBuffer.Write([]byte("."))
+		// Unpack as many messages as possible from the available buffer.
+		r.unpacker.Reset(r.buffer[r.i:r.n])
+		for err != io.ErrShortBuffer {
+			msg, n, err = r.unpacker.Unpack()
+			if err == io.EOF {
+				r.i += n
+				return msg, nil
+			}
+		}
+		if r.i == 0 {
+			// Short buffer without advancing, buffers are too small.
+			r.grow()
+		} else {
+			// All messages have been serialised, and one is half-way there.
+			// Pack buffers to make room for the pending buffer.
+			r.pack()
+		}
 	}
-	return r.nameBuffer.String()
 }
 
-func (r *Reader) readOctetPair() uint16 {
-	ini := r.i
-	r.i += 2
-	return binary.BigEndian.Uint16(r.data[ini:r.i])
+func (r *Reader) grow() {
+	r.bufferSwap = make([]byte, len(r.buffer)*2)
+	data2 := make([]byte, len(r.buffer)*2)
+	copy(data2, r.buffer)
+	r.buffer = data2
+}
+
+func (r *Reader) pack() {
+	copy(r.bufferSwap, r.buffer[r.i:r.n])
+	copy(r.buffer, r.bufferSwap)
+	r.n -= r.i
+	r.i = 0
 }

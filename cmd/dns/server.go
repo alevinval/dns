@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 
+	"bytes"
+
 	"github.com/go-rfc/dns"
 	"github.com/go-rfc/dns/debug"
 )
@@ -25,11 +27,16 @@ func main() {
 	log.Printf("server listening on %s", addr)
 
 	data := make([]byte, 576)
+	r := dns.NewReader(bytes.NewReader(data))
 	for {
-		n, peer, _ := conn.ReadFromUDP(data)
-		r := dns.NewReader(data[:n])
-		msg := r.ReadMessage()
-		debug.PrintMessage(msg)
-		conn.WriteToUDP(data, peer)
+		_, peer, _ := conn.ReadFromUDP(data)
+		msg, err := r.Read()
+		if err == nil {
+			debug.PrintMessage(msg)
+			conn.WriteToUDP(data, peer)
+		} else {
+			log.Panicf("Error reading messages: %s\n", err)
+		}
+
 	}
 }
