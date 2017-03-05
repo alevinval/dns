@@ -32,12 +32,26 @@ func main() {
 	defer f.Close()
 
 	data := make([]byte, 576)
+	unpacker := dns.NewUnpacker()
 	for {
-		n, peer, _ := conn.ReadFromUDP(data)
-		r := dns.NewUnpacker(data[:n])
-		msg, _, _ := r.Unpack()
+		n, peer, err := conn.ReadFromUDP(data)
+		if err != nil {
+			log.Printf("unexpected error reading from UDP: %s\n", err)
+			continue
+		}
+
+		unpacker.Reset(data[:n])
+		msg, nUnpack, err := unpacker.Unpack()
+		if nUnpack != n {
+			log.Panicf("unpacked less bytes than what was read (read %d bytes, unpacked %d bytes)", n, nUnpack)
+		}
+		if err != nil {
+			log.Panicf("error unpacking message: %s\n", err)
+		}
+
 		w := dns.NewWriter(msg)
 		w.WriteTo(f)
+
 		log.Printf("served request for %q from %s\n", msg.Queries[0].QName, peer.String())
 		conn.WriteToUDP(data, peer)
 	}

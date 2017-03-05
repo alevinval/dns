@@ -6,16 +6,21 @@ import (
 	"io"
 )
 
-type Unpacker struct {
-	data []byte
-	pos  int
+const (
+	headerLen    = 12
+	octetPairLen = 2
+)
 
-	msg        *Msg
+type Unpacker struct {
+	buffer []byte
+	msg    *Msg
+	i      int
+
 	nameBuffer bytes.Buffer
 }
 
-func NewUnpacker(b []byte) *Unpacker {
-	return &Unpacker{msg: &Msg{Header: Header{}}, data: b}
+func NewUnpacker() *Unpacker {
+	return &Unpacker{}
 }
 
 func (r *Unpacker) Unpack() (msg *Msg, n int, err error) {
@@ -29,12 +34,13 @@ func (r *Unpacker) Unpack() (msg *Msg, n int, err error) {
 		return nil, 0, err
 	}
 
-	return r.msg, r.pos, io.EOF
+	return r.msg, r.i, nil
 }
 
 func (r *Unpacker) Reset(b []byte) {
-	r.pos = 0
-	r.data = b
+	r.buffer = b
+	r.msg = &Msg{Header: Header{}}
+	r.i = 0
 }
 
 func (r *Unpacker) readQType() QType {
@@ -46,7 +52,7 @@ func (r *Unpacker) readQClass() QClass {
 }
 
 func (r *Unpacker) unpackHeader() (err error) {
-	if len(r.data) < 12 {
+	if len(r.buffer) < headerLen {
 		return io.ErrShortBuffer
 	}
 	h := Header{}
@@ -79,7 +85,7 @@ func (r *Unpacker) unpackQueries() (err error) {
 		if err != nil {
 			return err
 		}
-		if r.pos+2 >= len(r.data) {
+		if r.i+octetPairLen >= len(r.buffer) {
 			return io.ErrShortBuffer
 		}
 		queries[i].QName = qName
@@ -103,28 +109,28 @@ func (r *Unpacker) readName() (string, error) {
 		}
 
 		// Otherwise, current byte is the length of the label. Read it.
-		ini := r.pos
-		r.pos += int(currentByte)
-		if r.pos >= len(r.data) {
+		ini := r.i
+		r.i += int(currentByte)
+		if r.i >= len(r.buffer) {
 			return "", io.ErrShortBuffer
 		}
-		r.nameBuffer.Write(r.data[ini:r.pos])
+		r.nameBuffer.Write(r.buffer[ini:r.i])
 		r.nameBuffer.Write([]byte("."))
 	}
 	return r.nameBuffer.String(), nil
 }
 
 func (r *Unpacker) unpackOctetPair() uint16 {
-	ini := r.pos
-	r.pos += 2
-	return binary.BigEndian.Uint16(r.data[ini:r.pos])
+	ini := r.i
+	r.i += octetPairLen
+	return binary.BigEndian.Uint16(r.buffer[ini:r.i])
 }
 
 func (r *Unpacker) unpackByte() (byte, error) {
-	if r.pos >= len(r.data) {
+	if r.i >= len(r.buffer) {
 		return 0, io.ErrShortBuffer
 	}
-	b := r.data[r.pos]
-	r.pos++
+	b := r.buffer[r.i]
+	r.i++
 	return b, nil
 }

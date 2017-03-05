@@ -16,7 +16,7 @@ func NewReader(r io.Reader) *Reader {
 	return &Reader{
 		buffer:     make([]byte, 20),
 		bufferSwap: make([]byte, 20),
-		unpacker:   NewUnpacker(nil),
+		unpacker:   NewUnpacker(),
 		src:        r,
 	}
 }
@@ -30,15 +30,14 @@ func (r *Reader) Read() (msg *Msg, err error) {
 			return
 		}
 
-		// Unpack as many messages as possible from the available buffer.
+		// Unpack message if possible.
 		r.unpacker.Reset(r.buffer[r.i:r.n])
-		for err != io.ErrShortBuffer {
-			msg, n, err = r.unpacker.Unpack()
-			if err == io.EOF {
-				r.i += n
-				return msg, nil
-			}
+		msg, n, err = r.unpacker.Unpack()
+		if err == nil {
+			r.i += n
+			return msg, nil
 		}
+
 		if r.i == 0 {
 			// Short buffer without advancing, buffers are too small.
 			r.grow()
