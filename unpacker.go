@@ -3,12 +3,21 @@ package dns
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
 )
 
 const (
+	MaxNameLen  = 255
+	MaxLabelLen = 63
+
 	headerLen    = 12
 	octetPairLen = 2
+)
+
+var (
+	ErrLabelTooLong = errors.New("a label must be 63 octets or less")
+	ErrNameTooLong  = errors.New("a name must be 255 octets or less")
 )
 
 type Unpacker struct {
@@ -108,6 +117,10 @@ func (r *Unpacker) readName() (string, error) {
 			break
 		}
 
+		if currentByte > MaxLabelLen {
+			return "", ErrLabelTooLong
+		}
+
 		// Otherwise, current byte is the length of the label. Read it.
 		ini := r.i
 		r.i += int(currentByte)
@@ -116,6 +129,10 @@ func (r *Unpacker) readName() (string, error) {
 		}
 		r.nameBuffer.Write(r.buffer[ini:r.i])
 		r.nameBuffer.Write([]byte("."))
+
+		if r.nameBuffer.Len() > MaxNameLen {
+			return "", ErrNameTooLong
+		}
 	}
 	return r.nameBuffer.String(), nil
 }
