@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log"
 	"os"
 
@@ -24,10 +25,13 @@ func main() {
 
 	fr := dns.NewReader(f)
 	var msg *dns.Msg
-	for err == nil {
+	for {
 		msg, err = fr.Read()
-		if err == nil {
-			debug.PrintMessage(msg)
+		if err == io.EOF {
+			return
+		} else if err != nil {
+			log.Panicf("error replaying: %s\n", err)
 		}
+		debug.PrintMessage(msg)
 	}
 }

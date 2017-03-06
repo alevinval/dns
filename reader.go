@@ -2,6 +2,7 @@ package dns
 
 import (
 	"io"
+	"log"
 )
 
 type Reader struct {
@@ -36,6 +37,8 @@ func (r *Reader) Read() (msg *Msg, err error) {
 		if err == nil {
 			r.i += n
 			return msg, nil
+		} else {
+			log.Printf("error while reading: %s\n", err)
 		}
 
 		if r.i == 0 {

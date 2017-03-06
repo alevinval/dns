@@ -107,34 +107,20 @@ func (r *Unpacker) unpackQueries() (err error) {
 func (r *Unpacker) readName() (string, error) {
 	r.nameBuffer.Reset()
 	for {
-		currentByte, err := r.unpackByte()
-		if err != nil {
+		label, err := unpackLabel(r.buffer, r.i)
+		if err == io.EOF {
+			r.i++
+			return r.nameBuffer.String(), nil
+		} else if err != nil {
 			return "", err
 		}
 
-		// On null termination, the label is finished.
-		if currentByte == 0 {
-			break
-		}
-
-		if currentByte > MaxLabelLen {
-			return "", ErrLabelTooLong
-		}
-
-		// Otherwise, current byte is the length of the label. Read it.
-		ini := r.i
-		r.i += int(currentByte)
-		if r.i >= len(r.buffer) {
-			return "", io.ErrShortBuffer
-		}
-		r.nameBuffer.Write(r.buffer[ini:r.i])
-		r.nameBuffer.Write([]byte("."))
-
+		r.i += len(label) + 1
+		r.nameBuffer.WriteString(label + ".")
 		if r.nameBuffer.Len() > MaxNameLen {
 			return "", ErrNameTooLong
 		}
 	}
-	return r.nameBuffer.String(), nil
 }
 
 func (r *Unpacker) unpackOctetPair() uint16 {
@@ -150,4 +136,34 @@ func (r *Unpacker) unpackByte() (byte, error) {
 	b := r.buffer[r.i]
 	r.i++
 	return b, nil
+}
+
+func unpackLabel(b []byte, offset int) (string, error) {
+	if !checkBounds(b, offset, offset+1) {
+		return "", io.ErrShortBuffer
+	}
+	currentByte := b[offset]
+	if currentByte == 0 {
+		return "", io.EOF
+	}
+	offset++
+	switch {
+	case currentByte>>6 == 3:
+		// Compute offsets for the pointer.
+		offset = int((currentByte&64)<<8 + b[offset])
+		currentByte = b[offset]
+		offset++
+	}
+	end := offset + int(currentByte)
+	if end-offset > MaxLabelLen {
+		return "", ErrLabelTooLong
+	}
+	if !checkBounds(b, offset, end) {
+		return "", io.ErrShortBuffer
+	}
+	return string(b[offset:end]), nil
+}
+
+func checkBounds(b []byte, begin, end int) bool {
+	return len(b[begin:]) >= end-begin
 }
