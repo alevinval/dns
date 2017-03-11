@@ -1,7 +1,6 @@
 package dns
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -24,8 +23,6 @@ type Unpacker struct {
 	buffer []byte
 	msg    *Msg
 	i      int
-
-	nameBuffer bytes.Buffer
 }
 
 func NewUnpacker() *Unpacker {
@@ -105,20 +102,11 @@ func (r *Unpacker) unpackQueries() (err error) {
 }
 
 func (r *Unpacker) readName() (string, error) {
-	r.nameBuffer.Reset()
-	for {
-		label, n, err := unpackLabel(r.buffer, r.i)
+	name, n, err := unpackName(r.buffer, r.i)
+	if err == nil {
 		r.i += n
-		if err == io.EOF {
-			return r.nameBuffer.String(), nil
-		} else if err != nil {
-			return "", err
-		}
-		r.nameBuffer.WriteString(label + ".")
-		if r.nameBuffer.Len() > MaxNameLen {
-			return "", ErrNameTooLong
-		}
 	}
+	return name, err
 }
 
 func (r *Unpacker) unpackOctetPair() uint16 {
@@ -134,6 +122,32 @@ func (r *Unpacker) unpackByte() (byte, error) {
 	b := r.buffer[r.i]
 	r.i++
 	return b, nil
+}
+
+func unpackName(b []byte, offset int) (name string, n int, err error) {
+	var ln int
+	var label string
+	for {
+
+		// Unpack a label and advance offset and read bytes.
+		label, ln, err = unpackLabel(b, offset)
+		offset += ln
+		n += ln
+
+		// Check for errors.
+		if err == io.EOF {
+			return name, n, nil
+		}
+		if err != nil {
+			return "", 0, err
+		}
+
+		// If successful, append label to the name.
+		name += label + "."
+		if len(name) > MaxNameLen {
+			return "", 0, ErrNameTooLong
+		}
+	}
 }
 
 func unpackLabel(b []byte, offset int) (label string, n int, err error) {
