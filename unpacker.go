@@ -107,7 +107,7 @@ func (r *Unpacker) unpackQueries() (err error) {
 func (r *Unpacker) readName() (string, error) {
 	r.nameBuffer.Reset()
 	for {
-		label, err := unpackLabel(r.buffer, r.i)
+		label, _, err := unpackLabel(r.buffer, r.i)
 		if err == io.EOF {
 			r.i++
 			return r.nameBuffer.String(), nil
@@ -138,22 +138,23 @@ func (r *Unpacker) unpackByte() (byte, error) {
 	return b, nil
 }
 
-func unpackLabel(b []byte, offset int) (string, error) {
+func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 	if !checkBounds(b, offset, offset+1) {
-		return "", io.ErrShortBuffer
+		return "", 0, io.ErrShortBuffer
 	}
 
 	// Current byte indicates the length of the label.
 	// If its a null byte, label is over.
 	currentByte := b[offset]
 	if currentByte == 0 {
-		return "", io.EOF
+		return "", 1, io.EOF
 	}
-
+	n++
 	offset++
 
 	// Check if its a pointer.
-	if currentByte>>6 == 3 {
+	isPointer := currentByte>>6 == 3
+	if isPointer {
 
 		// Compute the offset to the pointer.
 		offset = int((currentByte&64)<<8 + b[offset])
@@ -164,14 +165,17 @@ func unpackLabel(b []byte, offset int) (string, error) {
 	// Check if the label has valid length.
 	endOffset := offset + int(currentByte)
 	if endOffset-offset > MaxLabelLen {
-		return "", ErrLabelTooLong
+		return "", 0, ErrLabelTooLong
 	}
 	if !checkBounds(b, offset, endOffset) {
-		return "", io.ErrShortBuffer
+		return "", 0, io.ErrShortBuffer
 	}
 
 	// Return the label.
-	return string(b[offset:endOffset]), nil
+	if !isPointer {
+		n += endOffset - offset
+	}
+	return string(b[offset:endOffset]), n, nil
 }
 
 // Check if begin and end are within bounds of a byte slice.
