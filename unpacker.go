@@ -162,16 +162,16 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 
 	// Check if the label has valid length.
 	endOffset := offset + int(currentByte)
-	if endOffset-offset > MaxLabelLen {
+	labelLen := endOffset - offset
+	if labelLen > MaxLabelLen {
 		return "", 0, ErrLabelTooLong
 	}
 	if !checkBounds(b, offset, endOffset) {
 		return "", 0, io.ErrShortBuffer
 	}
 
-	// Return the label.
 	if !isPointer {
-		n += endOffset - offset
+		n += labelLen
 	}
 	return string(b[offset:endOffset]), n, nil
 }
