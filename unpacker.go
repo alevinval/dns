@@ -87,10 +87,11 @@ func (r *Unpacker) unpackQueries() (err error) {
 	queries := make([]Query, r.msg.Header.QDCount)
 	r.msg.Queries = queries
 	for i := range queries {
-		qName, err := r.readName()
+		qName, n, err := unpackName(r.buffer, r.i)
 		if err != nil {
 			return err
 		}
+		r.i += n
 		if r.i+octetPairLen >= len(r.buffer) {
 			return io.ErrShortBuffer
 		}
@@ -99,14 +100,6 @@ func (r *Unpacker) unpackQueries() (err error) {
 		queries[i].QClass = r.readQClass()
 	}
 	return nil
-}
-
-func (r *Unpacker) readName() (string, error) {
-	name, n, err := unpackName(r.buffer, r.i)
-	if err == nil {
-		r.i += n
-	}
-	return name, err
 }
 
 func (r *Unpacker) unpackOctetPair() uint16 {
