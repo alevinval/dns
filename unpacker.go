@@ -142,28 +142,39 @@ func unpackLabel(b []byte, offset int) (string, error) {
 	if !checkBounds(b, offset, offset+1) {
 		return "", io.ErrShortBuffer
 	}
+
+	// Current byte indicates the length of the label.
+	// If its a null byte, label is over.
 	currentByte := b[offset]
 	if currentByte == 0 {
 		return "", io.EOF
 	}
+
 	offset++
-	switch {
-	case currentByte>>6 == 3:
-		// Compute offsets for the pointer.
+
+	// Check if its a pointer.
+	if currentByte>>6 == 3 {
+
+		// Compute the offset to the pointer.
 		offset = int((currentByte&64)<<8 + b[offset])
 		currentByte = b[offset]
 		offset++
 	}
-	end := offset + int(currentByte)
-	if end-offset > MaxLabelLen {
+
+	// Check if the label has valid length.
+	endOffset := offset + int(currentByte)
+	if endOffset-offset > MaxLabelLen {
 		return "", ErrLabelTooLong
 	}
-	if !checkBounds(b, offset, end) {
+	if !checkBounds(b, offset, endOffset) {
 		return "", io.ErrShortBuffer
 	}
-	return string(b[offset:end]), nil
+
+	// Return the label.
+	return string(b[offset:endOffset]), nil
 }
 
+// Check if begin and end are within bounds of a byte slice.
 func checkBounds(b []byte, begin, end int) bool {
-	return len(b[begin:]) >= end-begin
+	return len(b) >= begin && len(b[begin:]) >= end-begin
 }
