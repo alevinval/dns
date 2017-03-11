@@ -107,15 +107,13 @@ func (r *Unpacker) unpackQueries() (err error) {
 func (r *Unpacker) readName() (string, error) {
 	r.nameBuffer.Reset()
 	for {
-		label, _, err := unpackLabel(r.buffer, r.i)
+		label, n, err := unpackLabel(r.buffer, r.i)
+		r.i += n
 		if err == io.EOF {
-			r.i++
 			return r.nameBuffer.String(), nil
 		} else if err != nil {
 			return "", err
 		}
-
-		r.i += len(label) + 1
 		r.nameBuffer.WriteString(label + ".")
 		if r.nameBuffer.Len() > MaxNameLen {
 			return "", ErrNameTooLong
