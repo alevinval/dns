@@ -10,11 +10,11 @@ const (
 	maskZOffset      = 4
 
 	maskQR     = 1 << maskQROffset
-	maskOpCode = 1 << maskOpCodeOffset
+	maskOpCode = 15 << maskOpCodeOffset
 	maskAA     = 1 << maskAAOffset
 	maskTC     = 1 << maskTCOffset
 	maskRD     = 1 << maskRDOffset
 	maskRA     = 1 << maskRAOffset
 	maskZ      = 7 << maskZOffset
-	maskRCode  = 16
+	maskRCode  = 15
 )

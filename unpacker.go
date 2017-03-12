@@ -10,8 +10,8 @@ const (
 	MaxNameLen  = 255
 	MaxLabelLen = 63
 
-	headerLen    = 12
-	octetPairLen = 2
+	lenHeader = 12
+	lenUint16 = 2
 )
 
 var (
@@ -50,7 +50,9 @@ func (r *Unpacker) Reset(b []byte) {
 }
 
 func (r *Unpacker) readQType() QType {
-	return QType(r.unpackOctetPair())
+	qType, n, _ := unpackUint16(r.buffer, r.i)
+	r.i += n
+	return QType(qType)
 }
 
 func (r *Unpacker) readQClass() QClass {
@@ -58,28 +60,12 @@ func (r *Unpacker) readQClass() QClass {
 }
 
 func (r *Unpacker) unpackHeader() (err error) {
-	if len(r.buffer) < headerLen {
-		return io.ErrShortBuffer
+	h, n, err := unpackHeader(r.buffer, r.i)
+	if err != nil {
+		return err
 	}
-	h := Header{}
-	h.ID = r.unpackOctetPair()
-
-	flags := r.unpackOctetPair()
-	h.QR = (flags & maskQR >> maskQROffset) == 1
-	h.OpCode = OpCode(flags & maskOpCode >> maskOpCodeOffset)
-	h.AA = (flags & maskAA >> maskAAOffset) == 1
-	h.TC = (flags & maskTC >> maskTCOffset) == 1
-	h.RD = (flags & maskRD >> maskRDOffset) == 1
-	h.RA = (flags & maskRA >> maskRAOffset) == 1
-	h.Z = byte(flags & maskZ >> maskZOffset)
-	h.RCode = byte(flags & maskRCode)
-
-	h.QDCount = r.unpackOctetPair()
-	h.ANCount = r.unpackOctetPair()
-	h.NSCount = r.unpackOctetPair()
-	h.ARCount = r.unpackOctetPair()
-
-	r.msg.Header = h
+	r.msg.Header = *h
+	r.i += n
 	return nil
 }
 
@@ -92,10 +78,12 @@ func (r *Unpacker) unpackQueries() (err error) {
 			return err
 		}
 		r.i += n
-		if r.i+octetPairLen >= len(r.buffer) {
+		queries[i].QName = qName
+
+		// TODO: pending refactor on readQType and readQClass
+		if r.i+2*lenUint16 >= len(r.buffer) {
 			return io.ErrShortBuffer
 		}
-		queries[i].QName = qName
 		queries[i].QType = r.readQType()
 		queries[i].QClass = r.readQClass()
 	}
@@ -104,17 +92,69 @@ func (r *Unpacker) unpackQueries() (err error) {
 
 func (r *Unpacker) unpackOctetPair() uint16 {
 	ini := r.i
-	r.i += octetPairLen
+	r.i += lenUint16
 	return binary.BigEndian.Uint16(r.buffer[ini:r.i])
 }
 
-func (r *Unpacker) unpackByte() (byte, error) {
-	if r.i >= len(r.buffer) {
-		return 0, io.ErrShortBuffer
+func unpackHeader(b []byte, offset int) (h *Header, n int, err error) {
+	if !checkBounds(b, offset, offset+lenHeader) {
+		return nil, 0, io.ErrShortBuffer
 	}
-	b := r.buffer[r.i]
-	r.i++
-	return b, nil
+	iniOffset := offset
+	h = &Header{}
+	h.ID, n, err = unpackUint16(b, offset)
+	offset += n
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var flags uint16
+	flags, n, err = unpackUint16(b, offset)
+	offset += n
+	if err != nil {
+		return nil, 0, err
+	}
+
+	h.QR = (flags & maskQR >> maskQROffset) == 1
+	h.OpCode = OpCode(flags & maskOpCode >> maskOpCodeOffset)
+	h.AA = (flags & maskAA >> maskAAOffset) == 1
+	h.TC = (flags & maskTC >> maskTCOffset) == 1
+	h.RD = (flags & maskRD >> maskRDOffset) == 1
+	h.RA = (flags & maskRA >> maskRAOffset) == 1
+	h.Z = byte(flags & maskZ >> maskZOffset)
+	h.RCode = byte(flags & maskRCode)
+
+	h.QDCount, n, err = unpackUint16(b, offset)
+	offset += n
+
+	h.ANCount, n, err = unpackUint16(b, offset)
+	offset += n
+	if err != nil {
+		return nil, 0, err
+	}
+
+	h.NSCount, n, err = unpackUint16(b, offset)
+	offset += n
+	if err != nil {
+		return nil, 0, err
+	}
+
+	h.ARCount, n, err = unpackUint16(b, offset)
+	offset += n
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return h, offset - iniOffset, nil
+
+}
+
+func unpackUint16(b []byte, offset int) (r uint16, n int, err error) {
+	end := offset + 1
+	if !checkBounds(b, offset, end) {
+		return 0, 0, io.ErrShortBuffer
+	}
+	return uint16(b[end]) | uint16(b[offset])<<8, 2, nil
 }
 
 func unpackName(b []byte, offset int) (name string, n int, err error) {

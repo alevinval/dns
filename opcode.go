@@ -5,7 +5,7 @@ import "fmt"
 type OpCode byte
 
 const (
-	OpCodeQUERY = iota
+	OpCodeQUERY OpCode = iota
 	OpCodeIQUERY
 	OpCodeSTATUS
 )
