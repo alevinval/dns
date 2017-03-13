@@ -18,21 +18,20 @@ func initialise() bool {
 		1, 255,
 		// TODO: implement tests for the missing flags.
 		// FLAGS
-		1<<7 + byte(OpCodeSTATUS)<<3, 255,
+		1<<(maskQROffset-8) + byte(OpCodeSTATUS)<<(maskOpCodeOffset-8), 255,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	)
 	return true
 }
 
-func TestUnpackHeaderID(t *testing.T) {
-	expectedID := uint16(255 + 256)
+func TestUnpackHeader(t *testing.T) {
 	h, n, err := unpackHeader(headerBuffer.Bytes(), 0)
 	if !assert.NoError(t, err) {
 		return
 	}
 
 	assert.Equal(t, lenHeader, n)
-	assert.Equal(t, expectedID, h.ID)
+	assert.Equal(t, uint16(255+256), h.ID)
 	assert.True(t, h.QR)
 	assert.Equal(t, OpCodeSTATUS, h.OpCode)
 }

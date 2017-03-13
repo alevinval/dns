@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log"
 	"os"
-	"io"
 
 	"github.com/go-rfc/dns"
 	"github.com/go-rfc/dns/debug"

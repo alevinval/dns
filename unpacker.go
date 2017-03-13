@@ -1,7 +1,6 @@
 package dns
 
 import (
-	"encoding/binary"
 	"errors"
 	"io"
 )
@@ -11,7 +10,6 @@ const (
 	MaxLabelLen = 63
 
 	lenHeader = 12
-	lenUint16 = 2
 )
 
 var (
@@ -19,81 +17,27 @@ var (
 	ErrNameTooLong  = errors.New("a name must be 255 octets or less")
 )
 
-type Unpacker struct {
-	buffer []byte
-	msg    *Msg
-	i      int
-}
+func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
+	initialOffset := offset
 
-func NewUnpacker() *Unpacker {
-	return &Unpacker{}
-}
-
-func (r *Unpacker) Unpack() (msg *Msg, n int, err error) {
-	err = r.unpackHeader()
+	h, n, err := unpackHeader(b, offset)
 	if err != nil {
 		return nil, 0, err
 	}
+	offset += n
 
-	err = r.unpackQueries()
-	if err != nil {
-		return nil, 0, err
-	}
+	msg = &Msg{Header: *h}
+	msg.Queries = make([]Query, msg.Header.QDCount)
 
-	return r.msg, r.i, nil
-}
-
-func (r *Unpacker) Reset(b []byte) {
-	r.buffer = b
-	r.msg = &Msg{Header: Header{}}
-	r.i = 0
-}
-
-func (r *Unpacker) readQType() QType {
-	qType, n, _ := unpackUint16(r.buffer, r.i)
-	r.i += n
-	return QType(qType)
-}
-
-func (r *Unpacker) readQClass() QClass {
-	return QClass(r.unpackOctetPair())
-}
-
-func (r *Unpacker) unpackHeader() (err error) {
-	h, n, err := unpackHeader(r.buffer, r.i)
-	if err != nil {
-		return err
-	}
-	r.msg.Header = *h
-	r.i += n
-	return nil
-}
-
-func (r *Unpacker) unpackQueries() (err error) {
-	queries := make([]Query, r.msg.Header.QDCount)
-	r.msg.Queries = queries
-	for i := range queries {
-		qName, n, err := unpackName(r.buffer, r.i)
+	for i := range msg.Queries {
+		q, n, err := unpackQuery(b, offset)
 		if err != nil {
-			return err
+			return nil, 0, err
 		}
-		r.i += n
-		queries[i].QName = qName
-
-		// TODO: pending refactor on readQType and readQClass
-		if r.i+2*lenUint16 >= len(r.buffer) {
-			return io.ErrShortBuffer
-		}
-		queries[i].QType = r.readQType()
-		queries[i].QClass = r.readQClass()
+		offset += n
+		msg.Queries[i] = *q
 	}
-	return nil
-}
-
-func (r *Unpacker) unpackOctetPair() uint16 {
-	ini := r.i
-	r.i += lenUint16
-	return binary.BigEndian.Uint16(r.buffer[ini:r.i])
+	return msg, offset - initialOffset, nil
 }
 
 func unpackHeader(b []byte, offset int) (h *Header, n int, err error) {
@@ -126,6 +70,9 @@ func unpackHeader(b []byte, offset int) (h *Header, n int, err error) {
 
 	h.QDCount, n, err = unpackUint16(b, offset)
 	offset += n
+	if err != nil {
+		return nil, 0, err
+	}
 
 	h.ANCount, n, err = unpackUint16(b, offset)
 	offset += n
@@ -149,12 +96,30 @@ func unpackHeader(b []byte, offset int) (h *Header, n int, err error) {
 
 }
 
-func unpackUint16(b []byte, offset int) (r uint16, n int, err error) {
-	end := offset + 1
-	if !checkBounds(b, offset, end) {
-		return 0, 0, io.ErrShortBuffer
+func unpackQuery(b []byte, offset int) (q *Query, n int, err error) {
+	initialOffset := offset
+
+	qName, n, err := unpackName(b, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	return uint16(b[end]) | uint16(b[offset])<<8, 2, nil
+	offset += n
+
+	qType, n, err := unpackUint16(b, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	offset += n
+
+	qClass, n, err := unpackUint16(b, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	offset += n
+
+	q = &Query{QName: qName, QType: QType(qType), QClass: QClass(qClass)}
+	return q, offset - initialOffset, nil
+
 }
 
 func unpackName(b []byte, offset int) (name string, n int, err error) {
@@ -221,6 +186,14 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 		n += labelLen
 	}
 	return string(b[offset:endOffset]), n, nil
+}
+
+func unpackUint16(b []byte, offset int) (r uint16, n int, err error) {
+	end := offset + 1
+	if !checkBounds(b, offset, end) {
+		return 0, 0, io.ErrShortBuffer
+	}
+	return uint16(b[end]) | uint16(b[offset])<<8, 2, nil
 }
 
 // Check if begin and end are within bounds of a byte slice.
