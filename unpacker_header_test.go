@@ -13,12 +13,17 @@ var (
 )
 
 func initialise() bool {
+	flags := uint16(1<<maskQROffset +
+		uint16(OpCodeSTATUS)<<maskOpCodeOffset)
+	flagsByte1 := byte(flags >> 8)
+	flagsByte2 := byte(flags & (255 << 8))
+
 	headerBuffer.Write([]byte{
 		// ID
 		1, 255,
 		// TODO: implement tests for the missing flags.
 		// FLAGS
-		1<<(maskQROffset-8) + byte(OpCodeSTATUS)<<(maskOpCodeOffset-8), 255,
+		flagsByte1, flagsByte2,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	)
 	return true
