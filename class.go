@@ -8,7 +8,7 @@ type (
 )
 
 const (
-	ClassANY QClass = 255
+	QClassANY QClass = 255
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 
 var (
 	qClassToString = map[QClass]string{
-		ClassANY: "ANY",
+		QClassANY: "ANY",
 	}
 	classToString = map[Class]string{
 		ClassIN: "IN",
