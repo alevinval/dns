@@ -9,7 +9,7 @@ const (
 	MaxNameLen  = 255
 	MaxLabelLen = 63
 
-	lenHeader = 12
+	headerLen = 12
 )
 
 var (
@@ -41,7 +41,7 @@ func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
 }
 
 func unpackHeader(b []byte, offset int) (h *Header, n int, err error) {
-	if !checkBounds(b, offset, offset+lenHeader) {
+	if !checkBounds(b, offset+headerLen-1) {
 		return nil, 0, io.ErrShortBuffer
 	}
 	iniOffset := offset
@@ -149,7 +149,7 @@ func unpackName(b []byte, offset int) (name string, n int, err error) {
 }
 
 func unpackLabel(b []byte, offset int) (label string, n int, err error) {
-	if !checkBounds(b, offset, offset+1) {
+	if !checkBounds(b, offset) {
 		return "", 0, io.ErrShortBuffer
 	}
 
@@ -178,7 +178,7 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 	if labelLen > MaxLabelLen {
 		return "", 0, ErrLabelTooLong
 	}
-	if !checkBounds(b, offset, endOffset) {
+	if !checkBounds(b, endOffset) {
 		return "", 0, io.ErrShortBuffer
 	}
 
@@ -190,13 +190,13 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 
 func unpackUint16(b []byte, offset int) (r uint16, n int, err error) {
 	end := offset + 1
-	if !checkBounds(b, offset, end) {
+	if !checkBounds(b, end) {
 		return 0, 0, io.ErrShortBuffer
 	}
 	return uint16(b[end]) | uint16(b[offset])<<8, 2, nil
 }
 
 // Check if begin and end are within bounds of a byte slice.
-func checkBounds(b []byte, begin, end int) bool {
-	return len(b) >= begin && len(b[begin:]) >= end-begin
+func checkBounds(b []byte, end int) bool {
+	return end >= 0 && end < len(b)
 }

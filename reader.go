@@ -3,54 +3,54 @@ package dns
 import "io"
 
 type Reader struct {
-	i, n               int
-	buffer, bufferSwap []byte
+	last, i, n int
+	buffer     []byte
 
 	src io.Reader
 }
 
 func NewReader(r io.Reader) *Reader {
 	return &Reader{
-		buffer:     make([]byte, 20),
-		bufferSwap: make([]byte, 20),
-		src:        r,
+		// Buffer should be bigger. Making it tiny while developing
+		// the library to help catch logic flaws.
+		buffer: make([]byte, 1),
+		src:    r,
 	}
 }
 func (r *Reader) Read() (msg *Msg, err error) {
 	var n int
 	for {
-		// Read buffer to parse.
 		n, err = r.src.Read(r.buffer[r.n:])
 		r.n += n
-		if r.i == r.n && err == io.EOF {
+		if err != nil && (r.i >= r.n || r.last >= r.i) {
 			return
 		}
 
 		// Unpack message if possible.
 		msg, n, err = UnpackMsg(r.buffer[r.i:r.n], 0)
-		if err == nil {
-			r.i += n
-			return msg, nil
-		} else if err == io.ErrShortBuffer {
-			r.grow()
-		} else if r.i > 0 {
-			r.pack()
-		} else {
-			return
+		r.last = r.i
+		r.i += n
+		if err == io.ErrShortBuffer {
+			// Only grow the buffer when really needed.
+			if r.i > 0 && r.i > len(r.buffer)/2 {
+				r.pack()
+			} else {
+				r.grow()
+			}
+			continue
 		}
+		return
 	}
 }
 
 func (r *Reader) grow() {
-	r.bufferSwap = make([]byte, len(r.buffer)*2)
-	data2 := make([]byte, len(r.buffer)*2)
-	copy(data2, r.buffer)
-	r.buffer = data2
+	bigger := make([]byte, len(r.buffer)*2)
+	copy(bigger, r.buffer)
+	r.buffer = bigger
 }
 
 func (r *Reader) pack() {
-	copy(r.bufferSwap, r.buffer[r.i:r.n])
-	copy(r.buffer, r.bufferSwap)
+	copy(r.buffer, r.buffer[r.i:r.n])
 	r.n -= r.i
 	r.i = 0
 }

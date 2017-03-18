@@ -7,7 +7,7 @@ import (
 )
 
 func TestUnpackHeaderShortBuffer(t *testing.T) {
-	b := make([]byte, lenHeader-1)
+	b := make([]byte, headerLen-1)
 	_, n, err := unpackHeader(b, 0)
 	assert.Error(t, err)
 	assert.Equal(t, 0, n)
@@ -41,7 +41,7 @@ func TestUnpackHeader(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, lenHeader, n)
+	assert.Equal(t, headerLen, n)
 	assert.Equal(t, inputHeader.ID, unpackedHeader.ID)
 	assert.Equal(t, inputHeader.QR, unpackedHeader.QR)
 	assert.Equal(t, inputHeader.OpCode, unpackedHeader.OpCode)

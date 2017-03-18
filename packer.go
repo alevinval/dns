@@ -23,7 +23,7 @@ func packHeader(h *Header) []byte {
 	flags += uint16(h.Z) << maskZOffset
 	flags += uint16(h.RCode)
 
-	header := bytes.NewBuffer(make([]byte, 0, lenHeader))
+	header := bytes.NewBuffer(make([]byte, 0, headerLen))
 	header.WriteByte(byte(h.ID >> 8))
 	header.WriteByte(byte(h.ID))
 	header.WriteByte(byte(flags >> 8))
