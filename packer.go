@@ -7,11 +7,15 @@ import (
 
 func PackMsg(msg *Msg) []byte {
 	b := &bytes.Buffer{}
+	PackMsgTo(b, msg)
+	return b.Bytes()
+}
+
+func PackMsgTo(b *bytes.Buffer, msg *Msg) {
 	packHeader(b, &msg.Header)
 	for i := range msg.Queries {
 		packQuery(b, &msg.Queries[i])
 	}
-	return b.Bytes()
 }
 
 func packHeader(b *bytes.Buffer, h *Header) {
