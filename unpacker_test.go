@@ -27,6 +27,22 @@ func TestUnpackMsgEOF(t *testing.T) {
 	assert.Equal(t, headerLen, n)
 }
 
+func TestUnpackMsg(t *testing.T) {
+	expected := &Msg{Header: Header{QDCount: 1}, Queries: []Query{
+		{QName: "www.test.com.", QType: QTypeALL, QClass: QClass(ClassIN)},
+	}}
+	b := PackMsg(expected)
+
+	actual, n, err := UnpackMsg(b, 0)
+	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.Equal(t, len(b), n) {
+		return
+	}
+	assert.Equal(t, expected, actual)
+}
+
 func TestUnpackHeaderShortBuffer(t *testing.T) {
 	b := make([]byte, headerLen-1)
 	_, n, err := unpackHeader(b, 0)

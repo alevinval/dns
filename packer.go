@@ -13,7 +13,7 @@ func PackMsg(msg *Msg) []byte {
 
 func PackMsgTo(b *bytes.Buffer, msg *Msg) {
 	packHeader(b, &msg.Header)
-	for i := range msg.Queries {
+	for i := 0; i < int(msg.Header.QDCount); i++ {
 		packQuery(b, &msg.Queries[i])
 	}
 }
@@ -54,12 +54,13 @@ func packQuery(b *bytes.Buffer, q *Query) {
 }
 
 func writeName(b *bytes.Buffer, name string) {
+	name = strings.TrimSuffix(name, ".")
 	labels := strings.Split(name, ".")
 	for _, label := range labels {
-		labelLen := len(label)
-		b.WriteByte(byte(labelLen))
+		b.WriteByte(byte(len(label)))
 		b.WriteString(label)
 	}
+	b.WriteByte(0)
 }
 
 func writeUint16(b *bytes.Buffer, v uint16) {
