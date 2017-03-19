@@ -46,8 +46,8 @@ func main() {
 			log.Panicf("unpacked less bytes than what was read (read %d bytes, unpacked %d bytes)", n, nUnpack)
 		}
 
-		w := dns.NewWriter(msg)
-		w.WriteTo(f)
+		b := dns.PackMsg(msg)
+		f.Write(b)
 
 		log.Printf("served request for %q from %s\n", msg.Queries[0].QName, peer.String())
 		conn.WriteToUDP(data, peer)

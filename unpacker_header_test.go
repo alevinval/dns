@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,9 +35,10 @@ func TestUnpackHeader(t *testing.T) {
 		NSCount: 2,
 		ARCount: 1,
 	}
-	data := packHeader(inputHeader)
+	b := &bytes.Buffer{}
+	packHeader(b, inputHeader)
 
-	unpackedHeader, n, err := unpackHeader(data, 0)
+	unpackedHeader, n, err := unpackHeader(b.Bytes(), 0)
 	if !assert.NoError(t, err) {
 		return
 	}

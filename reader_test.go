@@ -28,10 +28,10 @@ func TestReaderShortBufferNoProgress(t *testing.T) {
 }
 
 func TestReaderHeaderOnly(t *testing.T) {
+	b := &bytes.Buffer{}
 	h := &Header{ID: 123}
-	b := packHeader(h)
-	buff := bytes.NewBuffer(b)
-	r := NewReader(buff)
+	packHeader(b, h)
+	r := NewReader(b)
 
 	msg, err := r.Read()
 	assert.NoError(t, err)
