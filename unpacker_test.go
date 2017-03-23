@@ -29,7 +29,7 @@ func TestUnpackMsgEOF(t *testing.T) {
 
 func TestUnpackMsg(t *testing.T) {
 	expected := &Msg{Header: Header{QDCount: 1}, Queries: []Query{
-		{QName: "www.test.com.", QType: QTypeALL, QClass: QClass(ClassIN)},
+		{QName: "www.test.com.", QType: TypeALL, QClass: Class(ClassIN)},
 	}}
 	b := PackMsg(expected)
 

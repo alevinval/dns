@@ -3,15 +3,14 @@ package dns
 import "fmt"
 
 type (
-	QType int16
-	Type  int16
+	Type int16
 )
 
 const (
-	QTypeAXFR QType = 252 + iota
-	QTypeMAILB
-	QTypeMAILA
-	QTypeALL
+	TypeAXFR Type = 252 + iota
+	TypeMAILB
+	TypeMAILA
+	TypeALL
 )
 
 const (
@@ -34,14 +33,14 @@ const (
 )
 
 var (
-	qTypeToString = map[QType]string{
-		QTypeAXFR:  "AXFR",
-		QTypeMAILB: "MAILB",
-		QTypeMAILA: "MAILA",
-		QTypeALL:   "ALL",
-	}
-
 	typeToString = map[Type]string{
+		// QTypes
+		TypeAXFR:  "AXFR",
+		TypeMAILB: "MAILB",
+		TypeMAILA: "MAILA",
+		TypeALL:   "ALL",
+
+		// Types
 		TypeA:     "A",
 		TypeNS:    "NS",
 		TypeMD:    "MD",
@@ -61,24 +60,12 @@ var (
 	}
 )
 
-func (qt QType) String() string {
-	s, ok := qTypeToString[qt]
-	if ok {
-		return s
-	}
-	return Type(qt).String()
-}
-
 func (t Type) String() string {
 	s, ok := typeToString[t]
 	if ok {
 		return s
 	}
 	return fmt.Sprintf("invalid(%d)", t)
-}
-
-func (qt QType) MarshalText() ([]byte, error) {
-	return []byte(qt.String()), nil
 }
 
 func (t Type) MarshalText() ([]byte, error) {

@@ -18,8 +18,8 @@ type (
 	}
 	Query struct {
 		QName  string
-		QType  QType
-		QClass QClass
+		QType  Type
+		QClass Class
 	}
 	Msg struct {
 		Header  Header

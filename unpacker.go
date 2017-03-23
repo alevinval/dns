@@ -117,7 +117,7 @@ func unpackQuery(b []byte, offset int) (q *Query, n int, err error) {
 	}
 	offset += n
 
-	q = &Query{QName: qName, QType: QType(qType), QClass: QClass(qClass)}
+	q = &Query{QName: qName, QType: Type(qType), QClass: Class(qClass)}
 	return q, offset - initialOffset, nil
 
 }
