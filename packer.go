@@ -13,8 +13,10 @@ func PackMsg(msg *Msg) []byte {
 
 func PackMsgTo(b *bytes.Buffer, msg *Msg) {
 	packHeader(b, &msg.Header)
+
+	labelTable := map[string]uint16{}
 	for i := 0; i < int(msg.Header.QDCount); i++ {
-		packQuery(b, &msg.Queries[i])
+		packQuery(b, labelTable, &msg.Queries[i])
 	}
 }
 
@@ -47,18 +49,26 @@ func packHeader(b *bytes.Buffer, h *Header) {
 	writeUint16(b, h.ARCount)
 }
 
-func packQuery(b *bytes.Buffer, q *Query) {
-	writeName(b, q.QName)
+func packQuery(b *bytes.Buffer, labelTable map[string]uint16, q *Query) {
+	writeName(b, labelTable, q.QName)
 	writeUint16(b, uint16(q.QType))
 	writeUint16(b, uint16(q.QClass))
 }
 
-func writeName(b *bytes.Buffer, name string) {
+func writeName(b *bytes.Buffer, labelTable map[string]uint16, name string) {
 	name = strings.TrimSuffix(name, ".")
 	labels := strings.Split(name, ".")
+
 	for _, label := range labels {
-		b.WriteByte(byte(len(label)))
-		b.WriteString(label)
+		position, seen := labelTable[label]
+		if seen {
+			b.WriteByte(byte(position>>8 | 3<<6))
+			b.WriteByte(byte(position))
+		} else {
+			labelTable[label] = uint16(b.Len())
+			b.WriteByte(byte(len(label)))
+			b.WriteString(label)
+		}
 	}
 	b.WriteByte(0)
 }
