@@ -159,7 +159,6 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 	if currentByte == 0 {
 		return "", 1, io.EOF
 	}
-	n++
 	offset++
 
 	// Check if its a pointer.
@@ -183,7 +182,9 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 	}
 
 	if !isPointer {
-		n += labelLen
+		n = labelLen + 1
+	} else {
+		n = 2
 	}
 	return string(b[offset:endOffset]), n, nil
 }

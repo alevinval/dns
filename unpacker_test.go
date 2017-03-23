@@ -166,6 +166,6 @@ func TestUnpackLabelWithPointer(t *testing.T) {
 	label, n, err := unpackLabel(b.Bytes(), 7)
 	if assert.NoError(t, err) {
 		assert.Equal(t, "domain", label)
-		assert.Equal(t, 1, n)
+		assert.Equal(t, 2, n)
 	}
 }
