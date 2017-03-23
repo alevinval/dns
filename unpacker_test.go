@@ -110,6 +110,17 @@ func TestUnpackNameEOF(t *testing.T) {
 	assert.Equal(t, 1, n)
 }
 
+func TestUnpackNameTooLong(t *testing.T) {
+	n := 4
+	b := make([]byte, n*64+1)
+	for i := 0; i < n; i++ {
+		b[i*64] = 63
+	}
+
+	_, _, err := unpackName(b, 0)
+	assert.Equal(t, ErrNameTooLong, err)
+}
+
 func TestUnpackName(t *testing.T) {
 	b := bytes.Buffer{}
 	b.WriteByte(6)
@@ -138,6 +149,12 @@ func TestUnpackLabelEOF(t *testing.T) {
 	assert.Equal(t, io.EOF, err)
 	assert.Equal(t, "", label)
 	assert.Equal(t, 1, n)
+}
+
+func TestUnpackLabelTooLong(t *testing.T) {
+	longLabel := []byte{64, 0}
+	_, _, err := unpackLabel(longLabel, 0)
+	assert.Equal(t, ErrLabelTooLong, err)
 }
 
 func TestUnpackLabel(t *testing.T) {
