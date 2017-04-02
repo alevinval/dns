@@ -31,7 +31,7 @@ func main() {
 	}
 	defer f.Close()
 
-	data := make([]byte, 576)
+	data := make([]byte, 512)
 	for {
 		n, peer, err := conn.ReadFromUDP(data)
 		if err != nil {

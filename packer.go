@@ -18,6 +18,20 @@ func PackMsgTo(b *bytes.Buffer, msg *Msg) {
 	for i := 0; i < int(msg.Header.QDCount); i++ {
 		packQuery(b, labelTable, &msg.Queries[i])
 	}
+
+	labelTable = map[string]uint16{}
+	for i := 0; i < int(msg.Header.ANCount); i++ {
+		packRR(b, labelTable, &msg.Responses[i])
+	}
+}
+
+func packRR(b *bytes.Buffer, labelTable map[string]uint16, rr *RR) {
+	writeName(b, labelTable, rr.Name)
+	writeUint16(b, uint16(rr.Type))
+	writeUint16(b, uint16(rr.Class))
+	writeUint32(b, rr.TTL)
+	writeUint16(b, rr.RDLength)
+	b.Write(rr.RData)
 }
 
 func packHeader(b *bytes.Buffer, h *Header) {
@@ -74,6 +88,13 @@ func writeName(b *bytes.Buffer, labelTable map[string]uint16, name string) {
 }
 
 func writeUint16(b *bytes.Buffer, v uint16) {
+	b.WriteByte(byte(v >> 8))
+	b.WriteByte(byte(v))
+}
+
+func writeUint32(b *bytes.Buffer, v uint32) {
+	b.WriteByte(byte(v >> 24))
+	b.WriteByte(byte(v >> 16))
 	b.WriteByte(byte(v >> 8))
 	b.WriteByte(byte(v))
 }

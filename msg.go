@@ -22,7 +22,8 @@ type (
 		QClass Class
 	}
 	Msg struct {
-		Header  Header
-		Queries []Query
+		Header    Header
+		Queries   []Query
+		Responses []RR
 	}
 )
