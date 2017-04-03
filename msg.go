@@ -21,6 +21,14 @@ type (
 		QType  Type
 		QClass Class
 	}
+	RR struct {
+		Name     string
+		Type     Type
+		Class    Class
+		TTL      uint32
+		RDLength uint16
+		RData    []byte
+	}
 	Msg struct {
 		Header    Header
 		Queries   []Query

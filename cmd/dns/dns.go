@@ -41,24 +41,8 @@ func main() {
 
 		debug.PrintMessage(queryMsg)
 
-		responseRR := dns.RR{
-			Name:     "dummy.com",
-			Class:    dns.ClassIN,
-			Type:     dns.TypeA,
-			TTL:      3600,
-			RDLength: 4,
-			RData:    []byte{1, 2, 3, 4}}
-
-		responseMsg := dns.Msg{
-			Header:    queryMsg.Header,
-			Queries:   queryMsg.Queries,
-			Responses: []dns.RR{responseRR},
-		}
-		responseMsg.Header.QR = true
-		responseMsg.Header.RD = false
-		responseMsg.Header.ANCount = 1
-
-		response := dns.PackMsg(&responseMsg)
+		responseMsg := debug.FakeResponseMsg(queryMsg)
+		response := dns.PackMsg(responseMsg)
 		conn.WriteToUDP(response, peer)
 	}
 }
