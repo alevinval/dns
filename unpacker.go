@@ -27,8 +27,8 @@ func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
 	offset += n
 
 	msg = &Msg{Header: *h}
-	msg.Queries = make([]Query, msg.Header.QDCount)
 
+	msg.Queries = make([]Query, msg.Header.QDCount)
 	for i := range msg.Queries {
 		q, n, err := unpackQuery(b, offset)
 		if err != nil {
@@ -36,6 +36,16 @@ func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
 		}
 		offset += n
 		msg.Queries[i] = *q
+	}
+
+	msg.Responses = make([]RR, msg.Header.ANCount)
+	for i := range msg.Responses {
+		r, n, err := unpackRR(b, offset)
+		if err != nil {
+			return nil, 0, err
+		}
+		offset += n
+		msg.Responses[i] = *r
 	}
 	return msg, offset - initialOffset, nil
 }
@@ -122,6 +132,55 @@ func unpackQuery(b []byte, offset int) (q *Query, n int, err error) {
 
 }
 
+func unpackRR(b []byte, offset int) (r *RR, n int, err error) {
+	initialOffset := offset
+
+	name, n, err := unpackName(b, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	offset += n
+
+	qType, n, err := unpackUint16(b, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	offset += n
+
+	qClass, n, err := unpackUint16(b, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	offset += n
+
+	ttl, n, err := unpackUint32(b, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	offset += n
+
+	rdlength, n, err := unpackUint16(b, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	offset += n
+
+	if len(b[offset:]) < int(rdlength) {
+		return nil, 0, io.ErrShortBuffer
+	}
+	rdata := b[offset : offset+int(rdlength)]
+	offset += int(rdlength)
+
+	return &RR{
+		Name:     name,
+		Class:    Class(qClass),
+		Type:     Type(qType),
+		TTL:      ttl,
+		RDLength: rdlength,
+		RData:    rdata,
+	}, offset - initialOffset, nil
+}
+
 func unpackName(b []byte, offset int) (name string, n int, err error) {
 	var ln int
 	var label string
@@ -195,6 +254,14 @@ func unpackUint16(b []byte, offset int) (r uint16, n int, err error) {
 		return 0, 0, io.ErrShortBuffer
 	}
 	return uint16(b[end]) | uint16(b[offset])<<8, 2, nil
+}
+
+func unpackUint32(b []byte, offset int) (r uint32, n int, err error) {
+	end := offset + 3
+	if !checkBounds(b, end) {
+		return 0, 0, io.ErrShortBuffer
+	}
+	return uint32(b[offset])<<24 | uint32(b[offset+1])<<16 | uint32(b[offset+2])<<8 | uint32(b[end]), 4, nil
 }
 
 // Check if begin and end are within bounds of a byte slice.
