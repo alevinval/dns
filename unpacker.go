@@ -40,12 +40,12 @@ func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
 
 	msg.Responses = make([]RR, msg.Header.ANCount)
 	for i := range msg.Responses {
-		r, n, err := unpackRR(b, offset)
+		rr, n, err := unpackRR(b, offset)
 		if err != nil {
 			return nil, 0, err
 		}
 		offset += n
-		msg.Responses[i] = *r
+		msg.Responses[i] = *rr
 	}
 	return msg, offset - initialOffset, nil
 }
@@ -115,19 +115,19 @@ func unpackQuery(b []byte, offset int) (q *Query, n int, err error) {
 	}
 	offset += n
 
-	qType, n, err := unpackUint16(b, offset)
+	qtype, n, err := unpackUint16(b, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 	offset += n
 
-	qClass, n, err := unpackUint16(b, offset)
+	qclass, n, err := unpackUint16(b, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 	offset += n
 
-	q = &Query{QName: qName, QType: Type(qType), QClass: Class(qClass)}
+	q = &Query{QName: qName, QType: Type(qtype), QClass: Class(qclass)}
 	return q, offset - initialOffset, nil
 
 }
@@ -141,13 +141,13 @@ func unpackRR(b []byte, offset int) (r *RR, n int, err error) {
 	}
 	offset += n
 
-	qType, n, err := unpackUint16(b, offset)
+	rrtype, n, err := unpackUint16(b, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 	offset += n
 
-	qClass, n, err := unpackUint16(b, offset)
+	class, n, err := unpackUint16(b, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -173,8 +173,8 @@ func unpackRR(b []byte, offset int) (r *RR, n int, err error) {
 
 	return &RR{
 		Name:     name,
-		Class:    Class(qClass),
-		Type:     Type(qType),
+		Class:    Class(class),
+		Type:     Type(rrtype),
 		TTL:      ttl,
 		RDLength: rdlength,
 		RData:    rdata,
@@ -253,7 +253,7 @@ func unpackUint16(b []byte, offset int) (r uint16, n int, err error) {
 	if !checkBounds(b, end) {
 		return 0, 0, io.ErrShortBuffer
 	}
-	return uint16(b[end]) | uint16(b[offset])<<8, 2, nil
+	return uint16(b[offset])<<8 | uint16(b[end]), 2, nil
 }
 
 func unpackUint32(b []byte, offset int) (r uint32, n int, err error) {
