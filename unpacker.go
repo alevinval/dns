@@ -13,8 +13,9 @@ const (
 )
 
 var (
-	ErrLabelTooLong = errors.New("a label must be 63 octets or less")
-	ErrNameTooLong  = errors.New("a name must be 255 octets or less")
+	ErrLabelTooLong        = errors.New("label must be 63 octets or less")
+	ErrNameTooLong         = errors.New("name must be 255 octets or less")
+	ErrLabelPointerIllegal = errors.New("label pointer is illegal")
 )
 
 func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
@@ -218,7 +219,11 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 	if currentByte == 0 {
 		return "", 1, io.EOF
 	}
+
 	offset++
+	if !checkBounds(b, offset) {
+		return "", 0, io.ErrShortBuffer
+	}
 
 	// Check if its a pointer.
 	isPointer := currentByte>>6 == 3
@@ -226,6 +231,10 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 
 		// Compute the offset to the pointer.
 		offset = int((currentByte&64)<<8 + b[offset])
+		if !checkBounds(b, offset) {
+			return "", 0, ErrLabelPointerIllegal
+		}
+
 		currentByte = b[offset]
 		offset++
 	}

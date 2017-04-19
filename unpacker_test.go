@@ -186,3 +186,18 @@ func TestUnpackLabelWithPointer(t *testing.T) {
 		assert.Equal(t, 2, n)
 	}
 }
+
+func TestUnpackLabelWithIllegalPointer(t *testing.T) {
+	b := bytes.Buffer{}
+	b.WriteByte(3 << 6)
+	b.WriteByte(2)
+
+	label, n, err := unpackLabel(b.Bytes(), 0)
+	if !assert.Error(t, err) {
+		return
+	}
+
+	assert.Equal(t, ErrLabelPointerIllegal, err)
+	assert.Equal(t, "", label)
+	assert.Equal(t, 0, n)
+}
