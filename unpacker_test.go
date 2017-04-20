@@ -111,13 +111,16 @@ func TestUnpackNameEOF(t *testing.T) {
 }
 
 func TestUnpackNameTooLong(t *testing.T) {
-	n := 4
-	b := make([]byte, n*64+1)
-	for i := 0; i < n; i++ {
-		b[i*64] = 63
-	}
+	maxLabel := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789x"
 
-	_, _, err := unpackName(b, 0)
+	b := bytes.Buffer{}
+	for i := 0; i < 4; i++ {
+		b.WriteByte(63)
+		b.WriteString(maxLabel)
+	}
+	b.WriteByte(0)
+
+	_, _, err := unpackName(b.Bytes(), 0)
 	assert.Equal(t, ErrNameTooLong, err)
 }
 
@@ -131,73 +134,4 @@ func TestUnpackName(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "domain.", name)
 	assert.Equal(t, 8, n)
-}
-
-// unpackLabel tests
-
-func TestUnpackLabelEmpty(t *testing.T) {
-	label, n, err := unpackLabel(emptyPayload, 0)
-	assert.Error(t, err)
-	assert.Equal(t, io.ErrShortBuffer, err)
-	assert.Equal(t, "", label)
-	assert.Equal(t, 0, n)
-}
-
-func TestUnpackLabelEOF(t *testing.T) {
-	label, n, err := unpackLabel(eofBuffer, 0)
-	assert.Error(t, err)
-	assert.Equal(t, io.EOF, err)
-	assert.Equal(t, "", label)
-	assert.Equal(t, 1, n)
-}
-
-func TestUnpackLabelTooLong(t *testing.T) {
-	longLabel := []byte{64, 0}
-	_, _, err := unpackLabel(longLabel, 0)
-	assert.Equal(t, ErrLabelTooLong, err)
-}
-
-func TestUnpackLabel(t *testing.T) {
-	b := bytes.Buffer{}
-	b.WriteByte(6)
-	b.WriteString("domain")
-	b.WriteByte(0)
-
-	label, n, err := unpackLabel(b.Bytes(), 0)
-	if assert.NoError(t, err) {
-		assert.Equal(t, "domain", label)
-		assert.Equal(t, 7, n)
-	}
-}
-
-func TestUnpackLabelWithPointer(t *testing.T) {
-	b := bytes.Buffer{}
-	b.WriteByte(6)
-	b.WriteString("domain")
-
-	ptr := byte(3 << 6)
-	b.WriteByte(ptr)
-	b.WriteByte(0)
-	b.WriteByte(0)
-
-	label, n, err := unpackLabel(b.Bytes(), 7)
-	if assert.NoError(t, err) {
-		assert.Equal(t, "domain", label)
-		assert.Equal(t, 2, n)
-	}
-}
-
-func TestUnpackLabelWithIllegalPointer(t *testing.T) {
-	b := bytes.Buffer{}
-	b.WriteByte(3 << 6)
-	b.WriteByte(2)
-
-	label, n, err := unpackLabel(b.Bytes(), 0)
-	if !assert.Error(t, err) {
-		return
-	}
-
-	assert.Equal(t, ErrLabelPointerIllegal, err)
-	assert.Equal(t, "", label)
-	assert.Equal(t, 0, n)
 }

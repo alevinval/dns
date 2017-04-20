@@ -71,8 +71,13 @@ func packQuery(b *bytes.Buffer, labelTable map[string]uint16, q *Query) {
 
 func writeName(b *bytes.Buffer, labelTable map[string]uint16, name string) {
 	name = strings.TrimSuffix(name, ".")
-	labels := strings.Split(name, ".")
 
+	if len(name) == 0 {
+		b.WriteByte(0)
+		return
+	}
+
+	labels := strings.Split(name, ".")
 	for _, label := range labels {
 		position, seen := labelTable[label]
 		if seen {

@@ -13,9 +13,11 @@ const (
 )
 
 var (
+	ErrLabelEmpty          = errors.New("label cannot be empty")
 	ErrLabelTooLong        = errors.New("label must be 63 octets or less")
-	ErrNameTooLong         = errors.New("name must be 255 octets or less")
+	ErrLabelInvalid        = errors.New("label format is invalid")
 	ErrLabelPointerIllegal = errors.New("label pointer is illegal")
+	ErrNameTooLong         = errors.New("name must be 255 octets or less")
 )
 
 func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
@@ -52,9 +54,6 @@ func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
 }
 
 func unpackHeader(b []byte, offset int) (h *Header, n int, err error) {
-	if !checkBounds(b, offset+headerLen-1) {
-		return nil, 0, io.ErrShortBuffer
-	}
 	iniOffset := offset
 	h = &Header{}
 	h.ID, n, err = unpackUint16(b, offset)
@@ -206,55 +205,6 @@ func unpackName(b []byte, offset int) (name string, n int, err error) {
 			return "", 0, ErrNameTooLong
 		}
 	}
-}
-
-func unpackLabel(b []byte, offset int) (label string, n int, err error) {
-	if !checkBounds(b, offset) {
-		return "", 0, io.ErrShortBuffer
-	}
-
-	// Current byte indicates the length of the label.
-	// If its a null byte, label is over.
-	currentByte := b[offset]
-	if currentByte == 0 {
-		return "", 1, io.EOF
-	}
-
-	offset++
-	if !checkBounds(b, offset) {
-		return "", 0, io.ErrShortBuffer
-	}
-
-	// Check if its a pointer.
-	isPointer := currentByte>>6 == 3
-	if isPointer {
-
-		// Compute the offset to the pointer.
-		offset = int((currentByte&64)<<8 + b[offset])
-		if !checkBounds(b, offset) {
-			return "", 0, ErrLabelPointerIllegal
-		}
-
-		currentByte = b[offset]
-		offset++
-	}
-
-	// Check if the label has valid length.
-	endOffset := offset + int(currentByte)
-	labelLen := endOffset - offset
-	if labelLen > MaxLabelLen {
-		return "", 0, ErrLabelTooLong
-	}
-	if !checkBounds(b, endOffset) {
-		return "", 0, io.ErrShortBuffer
-	}
-
-	if !isPointer {
-		n = labelLen + 1
-	} else {
-		n = 2
-	}
-	return string(b[offset:endOffset]), n, nil
 }
 
 func unpackUint16(b []byte, offset int) (r uint16, n int, err error) {
