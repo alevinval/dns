@@ -202,7 +202,6 @@ func unpackName(b []byte, offset int, pointerTable map[int]bool) (name string, n
 			if !isSafePointer(b, offset, pointerTable) {
 				return "", 0, ErrLabelPointerIllegal
 			}
-
 			label, ln, err = unpackLabelPointer(b, offset)
 		} else {
 			label, ln, err = unpackLabel(b, offset)

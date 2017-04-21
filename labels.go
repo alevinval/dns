@@ -5,24 +5,12 @@ import (
 	"regexp"
 )
 
-const (
-	isPtrOffset = 6
-
-	ptrAddrMask   = 64
-	ptrAddrOffset = 8
-)
-
 var (
 	labelRe = regexp.MustCompile(`^[[:alnum:]][[:alnum:]\-]{0,61}[[:alnum:]]|[[:alpha:]]$^.*[[:^digit:]].*$`)
 )
 
 func unpackLabelPointer(b []byte, offset int) (label string, n int, err error) {
-	pointerByte := b[offset]
-	offset++
-	if !checkBounds(b, offset) {
-		return "", 0, io.ErrShortBuffer
-	}
-	pointerOffset := int((pointerByte&ptrAddrMask)<<ptrAddrOffset + b[offset])
+	pointerOffset := getPointerOffset(b, offset)
 	if pointerOffset >= offset-1 {
 		return "", 0, ErrLabelPointerIllegal
 	}
@@ -52,13 +40,17 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 }
 
 func isPointer(b byte) bool {
-	return b>>isPtrOffset == 3
+	return b>>6 == 3
 }
 
 func isSafePointer(b []byte, offset int, pointerTable map[int]bool) bool {
-	pointerOffset := int((b[offset]&ptrAddrMask)<<ptrAddrMask + b[offset+1])
+	pointerOffset := getPointerOffset(b, offset)
 	_, ok := pointerTable[pointerOffset]
 	return ok
+}
+
+func getPointerOffset(b []byte, offset int) int {
+	return int((b[offset]&64)<<8 + b[offset+1])
 }
 
 func isValidLabel(label string) bool {

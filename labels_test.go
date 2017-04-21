@@ -29,10 +29,9 @@ func TestUnpackLabel(t *testing.T) {
 		{Input: "\x0asome.email", Expected: "some.email"},
 
 		// Pointer tests
-		{Input: "\xc0", Err: io.ErrShortBuffer, IsPointer: true},
 		{Input: "\xc0\x02", Err: ErrLabelPointerIllegal, IsPointer: true},
-		{Input: "\x01\xc0\x00", Offset: 1, Err: ErrLabelInvalid, IsPointer: true},
-		{Input: "\x00\xc0\x00", Offset: 1, Err: ErrLabelEmpty, IsPointer: true},
+		{Input: "\x01\xc0\x00", Offset: 1, Err: ErrLabelPointerIllegal, IsPointer: true},
+		{Input: "\x00\x00\xc0\x00", Offset: 2, Err: ErrLabelEmpty, IsPointer: true},
 		{Input: "\x06domain\xc0\x00", Expected: "domain", Offset: 7, IsPointer: true},
 	}
 
