@@ -31,9 +31,10 @@ func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
 
 	msg = &Msg{Header: *h}
 
+	pointerTable := map[int]bool{}
 	msg.Queries = make([]Query, msg.Header.QDCount)
 	for i := range msg.Queries {
-		q, n, err := unpackQuery(b, offset)
+		q, n, err := unpackQuery(b, offset, pointerTable)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -41,9 +42,10 @@ func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
 		msg.Queries[i] = *q
 	}
 
+	pointerTable = map[int]bool{}
 	msg.Responses = make([]RR, msg.Header.ANCount)
 	for i := range msg.Responses {
-		rr, n, err := unpackRR(b, offset)
+		rr, n, err := unpackRR(b, offset, pointerTable)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -106,10 +108,10 @@ func unpackHeader(b []byte, offset int) (h *Header, n int, err error) {
 
 }
 
-func unpackQuery(b []byte, offset int) (q *Query, n int, err error) {
+func unpackQuery(b []byte, offset int, pointerTable map[int]bool) (q *Query, n int, err error) {
 	initialOffset := offset
 
-	qName, n, err := unpackName(b, offset)
+	qName, n, err := unpackName(b, offset, pointerTable)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -132,10 +134,10 @@ func unpackQuery(b []byte, offset int) (q *Query, n int, err error) {
 
 }
 
-func unpackRR(b []byte, offset int) (r *RR, n int, err error) {
+func unpackRR(b []byte, offset int, pointerTable map[int]bool) (r *RR, n int, err error) {
 	initialOffset := offset
 
-	name, n, err := unpackName(b, offset)
+	name, n, err := unpackName(b, offset, pointerTable)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -181,7 +183,7 @@ func unpackRR(b []byte, offset int) (r *RR, n int, err error) {
 	}, offset - initialOffset, nil
 }
 
-func unpackName(b []byte, offset int) (name string, n int, err error) {
+func unpackName(b []byte, offset int, pointerTable map[int]bool) (name string, n int, err error) {
 	var ln int
 	var label string
 	for {

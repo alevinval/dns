@@ -96,7 +96,8 @@ func TestUnpackHeader(t *testing.T) {
 }
 
 func TestUnpackNameEmpty(t *testing.T) {
-	label, n, err := unpackName(emptyPayload, 0)
+	pointerTable := map[int]bool{}
+	label, n, err := unpackName(emptyPayload, 0, pointerTable)
 	assert.Error(t, err)
 	assert.Equal(t, io.ErrShortBuffer, err)
 	assert.Equal(t, "", label)
@@ -104,7 +105,8 @@ func TestUnpackNameEmpty(t *testing.T) {
 }
 
 func TestUnpackNameEOF(t *testing.T) {
-	label, n, err := unpackName(eofBuffer, 0)
+	pointerTable := map[int]bool{}
+	label, n, err := unpackName(eofBuffer, 0, pointerTable)
 	assert.NoError(t, err)
 	assert.Equal(t, "", label)
 	assert.Equal(t, 1, n)
@@ -120,7 +122,8 @@ func TestUnpackNameTooLong(t *testing.T) {
 	}
 	b.WriteByte(0)
 
-	_, _, err := unpackName(b.Bytes(), 0)
+	pointerTable := map[int]bool{}
+	_, _, err := unpackName(b.Bytes(), 0, pointerTable)
 	assert.Equal(t, ErrNameTooLong, err)
 }
 
@@ -130,7 +133,8 @@ func TestUnpackName(t *testing.T) {
 	b.WriteString("domain")
 	b.WriteByte(0)
 
-	name, n, err := unpackName(b.Bytes(), 0)
+	pointerTable := map[int]bool{}
+	name, n, err := unpackName(b.Bytes(), 0, pointerTable)
 	assert.NoError(t, err)
 	assert.Equal(t, "domain.", name)
 	assert.Equal(t, 8, n)
