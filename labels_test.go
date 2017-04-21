@@ -29,16 +29,27 @@ func TestUnpackLabel(t *testing.T) {
 		{Input: "\x0asome.email", Expected: "some.email"},
 
 		// Pointer tests
-		{Input: "\xc0", Err: io.ErrShortBuffer},
-		{Input: "\xc0\x02", Err: ErrLabelPointerIllegal},
-		{Input: "\x01\xc0\x00", Offset: 1, Err: ErrLabelInvalid},
-		{Input: "\x00\xc0\x00", Offset: 1, Err: ErrLabelEmpty},
+		{Input: "\xc0", Err: io.ErrShortBuffer, IsPointer: true},
+		{Input: "\xc0\x02", Err: ErrLabelPointerIllegal, IsPointer: true},
+		{Input: "\x01\xc0\x00", Offset: 1, Err: ErrLabelInvalid, IsPointer: true},
+		{Input: "\x00\xc0\x00", Offset: 1, Err: ErrLabelEmpty, IsPointer: true},
 		{Input: "\x06domain\xc0\x00", Expected: "domain", Offset: 7, IsPointer: true},
 	}
 
 	for _, c := range cases {
-		t.Logf("Running case with input %q\n", c.Input)
-		label, n, err := unpackLabel([]byte(c.Input), c.Offset)
+		t.Logf("Label unpacking input: %q\n", c.Input)
+
+		var label string
+		var n int
+		var err error
+
+		b := []byte(c.Input)
+		if c.IsPointer {
+			label, n, err = unpackLabelPointer(b, c.Offset)
+		} else {
+			label, n, err = unpackLabel(b, c.Offset)
+		}
+
 		assert.Equal(t, c.Err, err)
 		if err == nil {
 			if c.IsPointer {

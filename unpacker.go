@@ -185,14 +185,19 @@ func unpackName(b []byte, offset int) (name string, n int, err error) {
 	var ln int
 	var label string
 	for {
-
 		if !checkBounds(b, offset) {
 			return "", 0, io.ErrShortBuffer
-		} else if b[offset] == 0 {
+		}
+		currentByte := b[offset]
+		if currentByte == 0 {
 			return name, n + 1, nil
 		}
 
-		label, ln, err = unpackLabel(b, offset)
+		if isPointer(currentByte) {
+			label, ln, err = unpackLabelPointer(b, offset)
+		} else {
+			label, ln, err = unpackLabel(b, offset)
+		}
 		if err != nil {
 			return "", 0, err
 		}

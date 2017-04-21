@@ -9,38 +9,31 @@ var (
 	labelRe = regexp.MustCompile(`^[[:alnum:]][[:alnum:]\-]{0,61}[[:alnum:]]|[[:alpha:]]$^.*[[:^digit:]].*$`)
 )
 
-func unpackLabel(b []byte, offset int) (label string, n int, err error) {
-	// No need to check bounds because the caller, unpackName, already
-	// checked the byte at offset.
-	currentByte := b[offset]
+func unpackLabelPointer(b []byte, offset int) (label string, n int, err error) {
+	pointerByte := b[offset]
 	offset++
-
-	isPointer := isPointer(currentByte)
-	if isPointer {
-		if !checkBounds(b, offset) {
-			return "", 0, io.ErrShortBuffer
-		}
-
-		// Compute the offset to the pointer.
-		pointerOffset := int((currentByte&64)<<8 + b[offset])
-		if pointerOffset >= offset {
-			return "", 0, ErrLabelPointerIllegal
-		}
-
-		currentByte = b[pointerOffset]
-		offset = pointerOffset + 1
-		n = 2
+	if !checkBounds(b, offset) {
+		return "", 0, io.ErrShortBuffer
 	}
+	pointerOffset := int((pointerByte&64)<<8 + b[offset])
+	if pointerOffset >= offset-1 {
+		return "", 0, ErrLabelPointerIllegal
+	}
+	label, _, err = unpackLabel(b, pointerOffset)
+	return label, 2, err
+}
 
-	endOffset := offset + int(currentByte)
-
-	// Check if the label has valid length.
-	labelLen := endOffset - offset
+func unpackLabel(b []byte, offset int) (label string, n int, err error) {
+	labelLen := int(b[offset])
 	if labelLen <= 0 {
 		return "", 0, ErrLabelEmpty
 	} else if labelLen > MaxLabelLen {
 		return "", 0, ErrLabelTooLong
-	} else if !checkBounds(b, endOffset-1) {
+	}
+
+	offset++
+	endOffset := offset + labelLen
+	if !checkBounds(b, endOffset-1) {
 		return "", 0, io.ErrShortBuffer
 	}
 
@@ -48,11 +41,7 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 	if !isValidLabel(label) {
 		return "", 0, ErrLabelInvalid
 	}
-
-	if !isPointer {
-		n = labelLen + 1
-	}
-	return label, n, nil
+	return label, labelLen + 1, nil
 }
 
 func isPointer(b byte) bool {
