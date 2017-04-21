@@ -33,7 +33,7 @@ func TestUnpackLabel(t *testing.T) {
 		{Input: "\xc0\x02", Err: ErrLabelPointerIllegal},
 		{Input: "\x01\xc0\x00", Offset: 1, Err: ErrLabelInvalid},
 		{Input: "\x00\xc0\x00", Offset: 1, Err: ErrLabelEmpty},
-		{Input: "\x06domain\xc0\x00\x00", Expected: "domain", Offset: 7, IsPointer: true},
+		{Input: "\x06domain\xc0\x00", Expected: "domain", Offset: 7, IsPointer: true},
 	}
 
 	for _, c := range cases {
