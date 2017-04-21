@@ -1,7 +1,7 @@
 # Go DNS implementation
 
-Provides a set of primitives to manipulate and follow the DNS
-protocol as specified in [RFC-1035](https://tools.ietf.org/html/rfc1035).
+Provides a set of primitives to parse and generate DNS protocol payloads
+following the [RFC-1035](https://tools.ietf.org/html/rfc1035) specification.
 
 > **Note**
-> The project is a work in progress, and a learning project. 
+> This is a learning project and very work in progress.
