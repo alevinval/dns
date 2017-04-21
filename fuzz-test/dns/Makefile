@@ -1,6 +1,10 @@
 WORKDIR = .fuzz/
 BIN = ./dns-fuzz.zip
 
+install:
+	go get github.com/dvyukov/go-fuzz/go-fuzz
+	go get github.com/dvyukov/go-fuzz/go-fuzz-build
+
 build:
 	go-fuzz-build github.com/go-rfc/dns/fuzz-test/dns
 
