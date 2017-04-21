@@ -31,6 +31,7 @@ func TestUnpackLabel(t *testing.T) {
 		// Pointer tests
 		{Input: "\xc0\x02", Err: ErrLabelPointerIllegal, IsPointer: true},
 		{Input: "\x01\xc0\x00", Offset: 1, Err: ErrLabelPointerIllegal, IsPointer: true},
+		{Input: "\x01\xc0\xc0\x00", Offset: 2, Err: ErrLabelInvalid, IsPointer: true},
 		{Input: "\x00\x00\xc0\x00", Offset: 2, Err: ErrLabelEmpty, IsPointer: true},
 		{Input: "\x06domain\xc0\x00", Expected: "domain", Offset: 7, IsPointer: true},
 	}
