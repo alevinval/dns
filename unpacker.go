@@ -196,9 +196,19 @@ func unpackName(b []byte, offset int, pointerTable map[int]bool) (name string, n
 		}
 
 		if isPointer(currentByte) {
+			if !checkBounds(b, offset+2) {
+				return "", 0, io.ErrShortBuffer
+			}
+			if !isSafePointer(b, offset, pointerTable) {
+				return "", 0, ErrLabelPointerIllegal
+			}
+
 			label, ln, err = unpackLabelPointer(b, offset)
 		} else {
 			label, ln, err = unpackLabel(b, offset)
+			if err == nil {
+				pointerTable[offset] = true
+			}
 		}
 		if err != nil {
 			return "", 0, err
