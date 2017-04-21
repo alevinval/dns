@@ -15,18 +15,18 @@ func TestUnpackLabel(t *testing.T) {
 		IsPointer bool
 		Err       error
 	}{
-		{Input: "\x00", Err: io.EOF},
+		{Input: "\x00", Err: ErrLabelEmpty},
+		{Input: "\x40", Err: ErrLabelTooLong},
 		{Input: "\x01", Err: io.ErrShortBuffer},
 		{Input: "\x3f", Err: io.ErrShortBuffer},
-		{Input: "\x40", Err: ErrLabelTooLong},
 
 		{Input: "\x01.", Err: ErrLabelInvalid},
 		{Input: "\x02..", Err: ErrLabelInvalid},
 		{Input: "\x07.00000A", Err: ErrLabelInvalid},
 
-		{Input: "\x02ok", Expected: "ok", Err: nil},
-		{Input: "\x03123", Expected: "123", Err: nil},
-		{Input: "\x0asome.email", Expected: "some.email", Err: nil},
+		{Input: "\x02ok", Expected: "ok"},
+		{Input: "\x03123", Expected: "123"},
+		{Input: "\x0asome.email", Expected: "some.email"},
 
 		// Pointer tests
 		{Input: "\xc0", Err: io.ErrShortBuffer},

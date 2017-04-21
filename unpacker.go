@@ -186,21 +186,27 @@ func unpackName(b []byte, offset int) (name string, n int, err error) {
 	var label string
 	for {
 
-		// Unpack a label and advance offset and read bytes.
-		label, ln, err = unpackLabel(b, offset)
-		offset += ln
-		n += ln
-
-		// Check for errors.
-		if err == io.EOF {
+		if !checkBounds(b, offset) {
+			return "", 0, io.ErrShortBuffer
+		}
+		// Current byte indicates the length of the label.
+		// If its a null byte, name is over.
+		currentByte := b[offset]
+		if currentByte == 0 {
+			n++
 			return name, n, nil
 		}
+
+		// Unpack a label and advance offset and read bytes.
+		label, ln, err = unpackLabel(b, offset)
 		if err != nil {
 			return "", 0, err
 		}
 
 		// If successful, append label to the name.
 		name += label + "."
+		offset += ln
+		n += ln
 		if len(name) > MaxNameLen {
 			return "", 0, ErrNameTooLong
 		}

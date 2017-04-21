@@ -10,34 +10,26 @@ var (
 )
 
 func unpackLabel(b []byte, offset int) (label string, n int, err error) {
-	if !checkBounds(b, offset) {
-		return "", 0, io.ErrShortBuffer
-	}
-
-	// Current byte indicates the length of the label.
-	// If its a null byte, label is over.
+	// No need to check bounds because the caller, unpackName, already
+	// checked the byte at offset.
 	currentByte := b[offset]
-	if currentByte == 0 {
-		return "", 1, io.EOF
-	}
 	offset++
 
-	// Check if its a pointer.
-	isPointer := currentByte>>6 == 3
+	isPointer := isPointer(currentByte)
 	if isPointer {
 		if !checkBounds(b, offset) {
 			return "", 0, io.ErrShortBuffer
 		}
 
 		// Compute the offset to the pointer.
-		originalOffset := offset
-		offset = int((currentByte&64)<<8 + b[offset])
-		if offset >= originalOffset {
+		pointerOffset := int((currentByte&64)<<8 + b[offset])
+		if pointerOffset >= offset {
 			return "", 0, ErrLabelPointerIllegal
 		}
 
-		currentByte = b[offset]
-		offset++
+		currentByte = b[pointerOffset]
+		offset = pointerOffset + 1
+		n = 2
 	}
 
 	endOffset := offset + int(currentByte)
@@ -48,10 +40,7 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 		return "", 0, ErrLabelEmpty
 	} else if labelLen > MaxLabelLen {
 		return "", 0, ErrLabelTooLong
-	}
-
-	// Check if the label fits in buffer.
-	if !checkBounds(b, endOffset-1) {
+	} else if !checkBounds(b, endOffset-1) {
 		return "", 0, io.ErrShortBuffer
 	}
 
@@ -62,10 +51,12 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 
 	if !isPointer {
 		n = labelLen + 1
-	} else {
-		n = 2
 	}
 	return label, n, nil
+}
+
+func isPointer(b byte) bool {
+	return b>>6 == 3
 }
 
 func isValidLabel(label string) bool {
