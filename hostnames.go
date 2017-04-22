@@ -11,6 +11,9 @@ func unpackName(b []byte, offset int, pointerTable map[int]bool) (name string, n
 	for offset < len(b) {
 		switch {
 		case b[offset] == 0:
+			if len(name) == 0 {
+				return "", 0, ErrNameEmpty
+			}
 			return name, offset - initialOffset + 1, nil
 		case isPointer(b[offset]):
 			if !checkBounds(b, offset+2) {

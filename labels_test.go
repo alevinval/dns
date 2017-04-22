@@ -24,7 +24,7 @@ func TestUnpackLabel(t *testing.T) {
 		{Input: "\x02..", Err: ErrLabelInvalid},
 		{Input: "\x07.00000A", Err: ErrLabelInvalid},
 
-		{Input: "\x02ok", Expected: "ok"},
+		{Input: "\x01a", Expected: "a"},
 		{Input: "\x03123", Expected: "123"},
 		{Input: "\x0asome.email", Expected: "some.email"},
 

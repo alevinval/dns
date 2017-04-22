@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	labelRe = regexp.MustCompile(`^[[:alnum:]][[:alnum:]\-]{0,61}[[:alnum:]]|[[:alpha:]]$^.*[[:^digit:]].*$`)
+	labelRe = regexp.MustCompile(`^[[:alnum:]\-]{0,61}[[:alnum:]]|[[:alpha:]]$^.*[[:^digit:]].*$`)
 )
 
 // This function assumes that the pointer is valid. Hence the label is directly
@@ -57,5 +57,6 @@ func getPointerOffset(b []byte, offset int) int {
 }
 
 func isValidLabel(label string) bool {
+	// println(label)
 	return labelRe.MatchString(label)
 }

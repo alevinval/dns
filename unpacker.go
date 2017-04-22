@@ -17,6 +17,7 @@ var (
 	ErrLabelTooLong        = errors.New("label must be 63 octets or less")
 	ErrLabelInvalid        = errors.New("label format is invalid")
 	ErrLabelPointerIllegal = errors.New("label pointer is illegal")
+	ErrNameEmpty           = errors.New("name cannot be empty")
 	ErrNameTooLong         = errors.New("name must be 255 octets or less")
 )
 
