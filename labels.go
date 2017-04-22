@@ -9,18 +9,21 @@ var (
 	labelRe = regexp.MustCompile(`^[[:alnum:]][[:alnum:]\-]{0,61}[[:alnum:]]|[[:alpha:]]$^.*[[:^digit:]].*$`)
 )
 
+// This function assumes that the pointer is valid. Hence the label is directly
+// returned without properly unpacking it.
 func unpackLabelPointer(b []byte, offset int) (label string, n int, err error) {
 	pointerOffset := getPointerOffset(b, offset)
 	if pointerOffset >= offset-1 {
 		return "", 0, ErrLabelPointerIllegal
 	}
-	label, _, err = unpackLabel(b, pointerOffset)
-	return label, 2, err
+	l := int(b[pointerOffset])
+	pointerOffset++
+	return string(b[pointerOffset : pointerOffset+l]), 2, err
 }
 
 func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 	labelLen := int(b[offset])
-	if labelLen <= 0 {
+	if labelLen == 0 {
 		return "", 0, ErrLabelEmpty
 	} else if labelLen > MaxLabelLen {
 		return "", 0, ErrLabelTooLong

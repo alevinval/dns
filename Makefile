@@ -1,7 +1,7 @@
 COVERFILE = coverprofile.out
 
 test:
-	go test ./...
+	go test -cover -v
 
 cover:
 	go test -coverprofile $(COVERFILE)

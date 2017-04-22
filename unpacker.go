@@ -183,45 +183,6 @@ func unpackRR(b []byte, offset int, pointerTable map[int]bool) (r *RR, n int, er
 	}, offset - initialOffset, nil
 }
 
-func unpackName(b []byte, offset int, pointerTable map[int]bool) (name string, n int, err error) {
-	var ln int
-	var label string
-	for {
-		if !checkBounds(b, offset) {
-			return "", 0, io.ErrShortBuffer
-		}
-		currentByte := b[offset]
-		if currentByte == 0 {
-			return name, n + 1, nil
-		}
-
-		if isPointer(currentByte) {
-			if !checkBounds(b, offset+2) {
-				return "", 0, io.ErrShortBuffer
-			}
-			if !isSafePointer(b, offset, pointerTable) {
-				return "", 0, ErrLabelPointerIllegal
-			}
-			label, ln, err = unpackLabelPointer(b, offset)
-		} else {
-			label, ln, err = unpackLabel(b, offset)
-			if err == nil {
-				pointerTable[offset] = true
-			}
-		}
-		if err != nil {
-			return "", 0, err
-		}
-
-		name += label + "."
-		offset += ln
-		n += ln
-		if len(name) > MaxNameLen {
-			return "", 0, ErrNameTooLong
-		}
-	}
-}
-
 func unpackUint16(b []byte, offset int) (r uint16, n int, err error) {
 	end := offset + 1
 	if !checkBounds(b, end) {
