@@ -6,19 +6,12 @@ import (
 )
 
 const (
-	MaxNameLen  = 255
-	MaxLabelLen = 63
-
 	headerLen = 12
 )
 
 var (
-	ErrLabelEmpty          = errors.New("label cannot be empty")
-	ErrLabelTooLong        = errors.New("label must be 63 octets or less")
-	ErrLabelInvalid        = errors.New("label format is invalid")
-	ErrLabelPointerIllegal = errors.New("label pointer is illegal")
-	ErrNameEmpty           = errors.New("name cannot be empty")
-	ErrNameTooLong         = errors.New("name must be 255 octets or less")
+	ErrNameEmpty   = errors.New("name cannot be empty")
+	ErrNameTooLong = errors.New("name must be 255 octets or less")
 )
 
 func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {

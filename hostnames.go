@@ -4,6 +4,8 @@ import (
 	"io"
 )
 
+const MaxNameLen = 255
+
 func unpackName(b []byte, offset int, pointerTable map[int]struct{}) (name string, n int, err error) {
 	var label string
 	var ln int

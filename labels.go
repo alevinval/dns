@@ -1,11 +1,21 @@
 package dns
 
 import (
+	"errors"
 	"io"
 	"regexp"
 )
 
+const (
+	MaxLabelLen = 63
+)
+
 var (
+	ErrLabelEmpty          = errors.New("label cannot be empty")
+	ErrLabelTooLong        = errors.New("label must be 63 octets or less")
+	ErrLabelInvalid        = errors.New("label format is invalid")
+	ErrLabelPointerIllegal = errors.New("label pointer is illegal")
+
 	labelRe   = regexp.MustCompile(`(^[[:alnum:]]$)|(^[[:alnum:]][[:alnum:]\-]{0,61}[[:alnum:]]$)`)
 	numericRe = regexp.MustCompile(`^[[:digit:]]*$`)
 )
