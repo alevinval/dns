@@ -47,7 +47,7 @@ func isPointer(b byte) bool {
 	return b>>6 == 3
 }
 
-func isSafePointer(b []byte, offset int, pointerTable map[int]bool) bool {
+func isSafePointer(b []byte, offset int, pointerTable map[int]struct{}) bool {
 	pointerOffset := getPointerOffset(b, offset)
 	_, ok := pointerTable[pointerOffset]
 	return ok

@@ -11,7 +11,7 @@ func TestUnpackNameSuite(t *testing.T) {
 	cases := []struct {
 		Input        string
 		Expected     string
-		PointerTable map[int]bool
+		PointerTable map[int]struct{}
 		Err          error
 	}{
 		{Input: "", Err: io.ErrShortBuffer},
@@ -29,7 +29,7 @@ func TestUnpackNameSuite(t *testing.T) {
 		t.Logf("Name unpacking input: %q\n", c.Input)
 		b := []byte(c.Input)
 		if c.PointerTable == nil {
-			c.PointerTable = map[int]bool{}
+			c.PointerTable = map[int]struct{}{}
 		}
 		name, n, err := unpackName(b, 0, c.PointerTable)
 		assert.Equal(t, c.Err, err)

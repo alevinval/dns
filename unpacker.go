@@ -32,7 +32,7 @@ func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
 
 	msg = &Msg{Header: *h}
 
-	pointerTable := map[int]bool{}
+	pointerTable := map[int]struct{}{}
 	msg.Queries = make([]Query, msg.Header.QDCount)
 	for i := range msg.Queries {
 		q, n, err := unpackQuery(b, offset, pointerTable)
@@ -43,7 +43,7 @@ func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {
 		msg.Queries[i] = *q
 	}
 
-	pointerTable = map[int]bool{}
+	pointerTable = map[int]struct{}{}
 	msg.Responses = make([]RR, msg.Header.ANCount)
 	for i := range msg.Responses {
 		rr, n, err := unpackRR(b, offset, pointerTable)
@@ -109,7 +109,7 @@ func unpackHeader(b []byte, offset int) (h *Header, n int, err error) {
 
 }
 
-func unpackQuery(b []byte, offset int, pointerTable map[int]bool) (q *Query, n int, err error) {
+func unpackQuery(b []byte, offset int, pointerTable map[int]struct{}) (q *Query, n int, err error) {
 	initialOffset := offset
 
 	qName, n, err := unpackName(b, offset, pointerTable)
@@ -135,7 +135,7 @@ func unpackQuery(b []byte, offset int, pointerTable map[int]bool) (q *Query, n i
 
 }
 
-func unpackRR(b []byte, offset int, pointerTable map[int]bool) (r *RR, n int, err error) {
+func unpackRR(b []byte, offset int, pointerTable map[int]struct{}) (r *RR, n int, err error) {
 	initialOffset := offset
 
 	name, n, err := unpackName(b, offset, pointerTable)

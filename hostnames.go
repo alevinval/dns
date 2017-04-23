@@ -4,7 +4,7 @@ import (
 	"io"
 )
 
-func unpackName(b []byte, offset int, pointerTable map[int]bool) (name string, n int, err error) {
+func unpackName(b []byte, offset int, pointerTable map[int]struct{}) (name string, n int, err error) {
 	var label string
 	var ln int
 	initialOffset := offset
@@ -25,7 +25,7 @@ func unpackName(b []byte, offset int, pointerTable map[int]bool) (name string, n
 		default:
 			label, ln, err = unpackLabel(b, offset)
 			if err == nil {
-				pointerTable[offset] = true
+				pointerTable[offset] = struct{}{}
 			}
 		}
 
