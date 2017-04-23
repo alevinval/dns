@@ -8,11 +8,46 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPackEmptyName(t *testing.T) {
-	b := &bytes.Buffer{}
-	err := packName(b, map[string]int{}, "")
-	assert.Equal(t, ErrLabelInvalid, err)
-	assert.Equal(t, 0, b.Len())
+func TestPackName(t *testing.T) {
+	cases := []struct {
+		Input      string
+		Expected   string
+		LabelTable map[string]int
+		Err        error
+	}{
+		{Input: "", Err: ErrLabelInvalid},
+		{Input: ".", Err: ErrLabelInvalid},
+		{Input: "-", Err: ErrLabelInvalid},
+		{Input: "-ab", Err: ErrLabelInvalid},
+		{Input: "ab-", Err: ErrLabelInvalid},
+		{Input: "1", Err: ErrLabelInvalid},
+		{Input: "123", Err: ErrLabelInvalid},
+
+		{Input: "a", Expected: "\x01a\x00"},
+		{Input: "1a", Expected: "\x021a\x00"},
+		{Input: "a1", Expected: "\x02a1\x00"},
+		{Input: "abc", Expected: "\x03abc\x00"},
+		{Input: "a-c", Expected: "\x03a-c\x00"},
+		{Input: "a.b.c", Expected: "\x01a\x01b\x01c\x00"},
+
+		// No pointers for 1 octet labels.
+		{Input: "a.a.a", Expected: "\x01a\x01a\x01a\x00"},
+		// Pointers otherwise.
+		{Input: "ab.ab", Expected: "\x02ab\xc0\x00\x00"},
+	}
+
+	for _, c := range cases {
+		t.Logf("Name packing input: %q\n", c.Input)
+		b := &bytes.Buffer{}
+		if c.LabelTable == nil {
+			c.LabelTable = map[string]int{}
+		}
+		err := packName(b, c.LabelTable, c.Input)
+		assert.Equal(t, c.Err, err)
+		if err == nil {
+			assert.Equal(t, c.Expected, b.String())
+		}
+	}
 }
 
 func TestUnpackName(t *testing.T) {

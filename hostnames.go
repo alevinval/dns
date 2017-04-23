@@ -15,7 +15,6 @@ func packName(b *bytes.Buffer, labelTable map[string]int, name string) error {
 		if !isValidLabel(label) {
 			return ErrLabelInvalid
 		}
-
 		position, seen := labelTable[label]
 		if seen {
 			packPointerTo(b, position)
