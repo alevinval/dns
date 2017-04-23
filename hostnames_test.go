@@ -1,13 +1,21 @@
 package dns
 
 import (
+	"bytes"
 	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUnpackNameSuite(t *testing.T) {
+func TestPackEmptyName(t *testing.T) {
+	b := &bytes.Buffer{}
+	err := packName(b, map[string]int{}, "")
+	assert.Equal(t, ErrLabelInvalid, err)
+	assert.Equal(t, 0, b.Len())
+}
+
+func TestUnpackName(t *testing.T) {
 	cases := []struct {
 		Input        string
 		Expected     string

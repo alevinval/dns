@@ -1,7 +1,6 @@
 package dns
 
 import (
-	"bytes"
 	"net"
 	"testing"
 
@@ -40,11 +39,4 @@ func TestPackRR(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedMsg, actualMsg)
 
-}
-
-func TestWriteEmptyName(t *testing.T) {
-	b := &bytes.Buffer{}
-	packName(b, map[string]int{}, "")
-
-	assert.Equal(t, 1, b.Len())
 }

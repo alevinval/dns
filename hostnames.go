@@ -8,16 +8,14 @@ import (
 
 const MaxNameLen = 255
 
-func packName(b *bytes.Buffer, labelTable map[string]int, name string) {
+func packName(b *bytes.Buffer, labelTable map[string]int, name string) error {
 	name = strings.TrimSuffix(name, ".")
-
-	if len(name) == 0 {
-		b.WriteByte(0)
-		return
-	}
-
 	labels := strings.Split(name, ".")
 	for _, label := range labels {
+		if !isValidLabel(label) {
+			return ErrLabelInvalid
+		}
+
 		position, seen := labelTable[label]
 		if seen {
 			packPointerTo(b, position)
@@ -32,6 +30,7 @@ func packName(b *bytes.Buffer, labelTable map[string]int, name string) {
 		}
 	}
 	b.WriteByte(0)
+	return nil
 }
 
 func unpackName(b []byte, offset int, pointerTable map[int]struct{}) (name string, n int, err error) {
