@@ -84,8 +84,12 @@ func writeName(b *bytes.Buffer, labelTable map[string]uint16, name string) {
 			b.WriteByte(byte(position>>8 | 3<<6))
 			b.WriteByte(byte(position))
 		} else {
-			labelTable[label] = uint16(b.Len())
-			b.WriteByte(byte(len(label)))
+			l := len(label)
+			// No point in using pointers for labels of length 1.
+			if l > 1 {
+				labelTable[label] = uint16(b.Len())
+			}
+			b.WriteByte(byte(l))
 			b.WriteString(label)
 		}
 	}
