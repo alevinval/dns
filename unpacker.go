@@ -1,17 +1,9 @@
 package dns
 
-import (
-	"errors"
-	"io"
-)
+import "io"
 
 const (
 	headerLen = 12
-)
-
-var (
-	ErrNameEmpty   = errors.New("name cannot be empty")
-	ErrNameTooLong = errors.New("name must be 255 octets or less")
 )
 
 func UnpackMsg(b []byte, offset int) (msg *Msg, n int, err error) {

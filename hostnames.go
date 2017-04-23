@@ -2,11 +2,17 @@ package dns
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"strings"
 )
 
 const MaxNameLen = 255
+
+var (
+	ErrNameEmpty   = errors.New("name cannot be empty")
+	ErrNameTooLong = errors.New("name must be 255 octets or less")
+)
 
 func packName(b *bytes.Buffer, labelTable map[string]int, name string) error {
 	name = strings.TrimSuffix(name, ".")
