@@ -7,7 +7,7 @@ import (
 func unpackName(b []byte, offset int, pointerTable map[int]bool) (name string, n int, err error) {
 	var label string
 	var ln int
-	var initialOffset = offset
+	initialOffset := offset
 	for offset < len(b) {
 		switch {
 		case b[offset] == 0:

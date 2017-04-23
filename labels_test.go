@@ -23,10 +23,12 @@ func TestUnpackLabel(t *testing.T) {
 		{Input: "\x01.", Err: ErrLabelInvalid},
 		{Input: "\x02..", Err: ErrLabelInvalid},
 		{Input: "\x07.00000A", Err: ErrLabelInvalid},
+		{Input: "\x03123", Err: ErrLabelInvalid},
+		{Input: "\x0asome.email", Err: ErrLabelInvalid},
+		{Input: "\x01-", Err: ErrLabelInvalid},
 
 		{Input: "\x01a", Expected: "a"},
-		{Input: "\x03123", Expected: "123"},
-		{Input: "\x0asome.email", Expected: "some.email"},
+		{Input: "\x031-a", Expected: "1-a"},
 
 		// Pointer tests
 		{Input: "\xc0\x02", Err: ErrLabelPointerIllegal, IsPointer: true},
