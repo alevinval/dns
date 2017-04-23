@@ -44,7 +44,7 @@ func TestPackRR(t *testing.T) {
 
 func TestWriteEmptyName(t *testing.T) {
 	b := &bytes.Buffer{}
-	writeName(b, map[string]uint16{}, "")
+	packName(b, map[string]int{}, "")
 
 	assert.Equal(t, 1, b.Len())
 }

@@ -1,10 +1,38 @@
 package dns
 
 import (
+	"bytes"
 	"io"
+	"strings"
 )
 
 const MaxNameLen = 255
+
+func packName(b *bytes.Buffer, labelTable map[string]int, name string) {
+	name = strings.TrimSuffix(name, ".")
+
+	if len(name) == 0 {
+		b.WriteByte(0)
+		return
+	}
+
+	labels := strings.Split(name, ".")
+	for _, label := range labels {
+		position, seen := labelTable[label]
+		if seen {
+			packPointerTo(b, position)
+		} else {
+			l := len(label)
+			// No point in using pointers for labels of length 1.
+			if l > 1 {
+				labelTable[label] = b.Len()
+			}
+			b.WriteByte(byte(l))
+			b.WriteString(label)
+		}
+	}
+	b.WriteByte(0)
+}
 
 func unpackName(b []byte, offset int, pointerTable map[int]struct{}) (name string, n int, err error) {
 	var label string
@@ -41,4 +69,9 @@ func unpackName(b []byte, offset int, pointerTable map[int]struct{}) (name strin
 		offset += ln
 	}
 	return "", 0, io.ErrShortBuffer
+}
+
+func packPointerTo(b *bytes.Buffer, offset int) {
+	b.WriteByte(byte(offset>>8 | 3<<6))
+	b.WriteByte(byte(offset))
 }

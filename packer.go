@@ -1,9 +1,6 @@
 package dns
 
-import (
-	"bytes"
-	"strings"
-)
+import "bytes"
 
 func PackMsg(msg *Msg) []byte {
 	b := &bytes.Buffer{}
@@ -14,19 +11,19 @@ func PackMsg(msg *Msg) []byte {
 func PackMsgTo(b *bytes.Buffer, msg *Msg) {
 	packHeader(b, &msg.Header)
 
-	labelTable := map[string]uint16{}
+	labelTable := map[string]int{}
 	for i := 0; i < int(msg.Header.QDCount); i++ {
 		packQuery(b, labelTable, &msg.Queries[i])
 	}
 
-	labelTable = map[string]uint16{}
+	labelTable = map[string]int{}
 	for i := 0; i < int(msg.Header.ANCount); i++ {
 		packRR(b, labelTable, &msg.Responses[i])
 	}
 }
 
-func packRR(b *bytes.Buffer, labelTable map[string]uint16, rr *RR) {
-	writeName(b, labelTable, rr.Name)
+func packRR(b *bytes.Buffer, labelTable map[string]int, rr *RR) {
+	packName(b, labelTable, rr.Name)
 	writeUint16(b, uint16(rr.Type))
 	writeUint16(b, uint16(rr.Class))
 	writeUint32(b, rr.TTL)
@@ -63,37 +60,10 @@ func packHeader(b *bytes.Buffer, h *Header) {
 	writeUint16(b, h.ARCount)
 }
 
-func packQuery(b *bytes.Buffer, labelTable map[string]uint16, q *Query) {
-	writeName(b, labelTable, q.QName)
+func packQuery(b *bytes.Buffer, labelTable map[string]int, q *Query) {
+	packName(b, labelTable, q.QName)
 	writeUint16(b, uint16(q.QType))
 	writeUint16(b, uint16(q.QClass))
-}
-
-func writeName(b *bytes.Buffer, labelTable map[string]uint16, name string) {
-	name = strings.TrimSuffix(name, ".")
-
-	if len(name) == 0 {
-		b.WriteByte(0)
-		return
-	}
-
-	labels := strings.Split(name, ".")
-	for _, label := range labels {
-		position, seen := labelTable[label]
-		if seen {
-			b.WriteByte(byte(position>>8 | 3<<6))
-			b.WriteByte(byte(position))
-		} else {
-			l := len(label)
-			// No point in using pointers for labels of length 1.
-			if l > 1 {
-				labelTable[label] = uint16(b.Len())
-			}
-			b.WriteByte(byte(l))
-			b.WriteString(label)
-		}
-	}
-	b.WriteByte(0)
 }
 
 func writeUint16(b *bytes.Buffer, v uint16) {
