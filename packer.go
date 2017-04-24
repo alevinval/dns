@@ -25,7 +25,7 @@ func PackMsgTo(b *bytes.Buffer, msg *Msg) {
 func packRR(b *bytes.Buffer, labelTable map[string]int, rr *RR) {
 	packName(b, labelTable, rr.Name)
 	writeUint16(b, uint16(rr.Type))
-	writeUint16(b, uint16(rr.Class))
+	packClass(b, rr.Class)
 	writeUint32(b, rr.TTL)
 	writeUint16(b, rr.RDLength)
 	b.Write(rr.RData)

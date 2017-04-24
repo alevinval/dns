@@ -109,15 +109,14 @@ func unpackQuery(b []byte, offset int, pointerTable map[int]struct{}) (q *Query,
 	}
 	offset += n
 
-	qclass, n, err := unpackUint16(b, offset)
+	qclass, n, err := unpackClass(b, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 	offset += n
 
-	q = &Query{QName: qName, QType: Type(qtype), QClass: Class(qclass)}
+	q = &Query{QName: qName, QType: Type(qtype), QClass: qclass}
 	return q, offset - initialOffset, nil
-
 }
 
 func unpackRR(b []byte, offset int, pointerTable map[int]struct{}) (r *RR, n int, err error) {
