@@ -54,7 +54,7 @@ func unpackLabel(b []byte, offset int) (label string, n int, err error) {
 }
 
 func isPointer(b byte) bool {
-	return b>>6 == 3
+	return b>>0x06 == 0x03
 }
 
 func isSafePointer(b []byte, offset int, pointerTable map[int]struct{}) bool {
@@ -64,7 +64,7 @@ func isSafePointer(b []byte, offset int, pointerTable map[int]struct{}) bool {
 }
 
 func getPointerOffset(b []byte, offset int) int {
-	return int((b[offset]&64)<<8 + b[offset+1])
+	return int(b[offset]&0x3F)<<0x08 + int(b[offset+1])
 }
 
 func isValidLabel(label string) bool {
