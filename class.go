@@ -6,20 +6,22 @@ import (
 	"fmt"
 )
 
-type Class uint16
+const (
+	ClassANY = 255
+)
 
 const (
 	ClassIN Class = 1 + iota
 	ClassCS
 	ClassCH
 	ClassHS
-
-	ClassANY = 255
 )
 
 var (
 	ErrClassInvalid = errors.New("invalid class value")
+)
 
+var (
 	classToString = map[Class]string{
 		ClassIN:  "IN",
 		ClassCS:  "CS",
@@ -28,6 +30,8 @@ var (
 		ClassANY: "ANY",
 	}
 )
+
+type Class uint16
 
 func (c Class) String() string {
 	s, ok := classToString[c]

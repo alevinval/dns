@@ -17,6 +17,7 @@ func TestClassPackAndUnpack(t *testing.T) {
 		{Input: "\x00\x02", Expected: ClassCS},
 		{Input: "\x00\x03", Expected: ClassCH},
 		{Input: "\x00\x04", Expected: ClassHS},
+
 		{Input: "\x00\xff", Expected: ClassANY},
 
 		{Input: "\x01\x00", Err: ErrClassInvalid},

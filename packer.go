@@ -24,7 +24,7 @@ func PackMsgTo(b *bytes.Buffer, msg *Msg) {
 
 func packRR(b *bytes.Buffer, labelTable map[string]int, rr *RR) {
 	packName(b, labelTable, rr.Name)
-	writeUint16(b, uint16(rr.Type))
+	packType(b, rr.Type)
 	packClass(b, rr.Class)
 	writeUint32(b, rr.TTL)
 	writeUint16(b, rr.RDLength)
@@ -62,8 +62,8 @@ func packHeader(b *bytes.Buffer, h *Header) {
 
 func packQuery(b *bytes.Buffer, labelTable map[string]int, q *Query) {
 	packName(b, labelTable, q.QName)
-	writeUint16(b, uint16(q.QType))
-	writeUint16(b, uint16(q.QClass))
+	packType(b, q.QType)
+	packClass(b, q.QClass)
 }
 
 func writeUint16(b *bytes.Buffer, v uint16) {
