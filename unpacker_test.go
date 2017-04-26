@@ -8,51 +8,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	emptyPayload = []byte{}
-	eofBuffer    = []byte{0}
-)
-
-func TestUnpackMsgShortBuffer(t *testing.T) {
-	_, n, err := UnpackMsg(emptyPayload, 0)
-	assert.Error(t, err)
-	assert.Equal(t, io.ErrShortBuffer, err)
-	assert.Equal(t, 0, n)
-}
-
-func TestUnpackMsgEOF(t *testing.T) {
-	emptyMessage := make([]byte, 32)
-	_, n, err := UnpackMsg(emptyMessage, 0)
-	assert.NoError(t, err)
-	assert.Equal(t, headerLen, n)
-}
-
 func TestUnpackMsg(t *testing.T) {
-	expected := &Msg{Header: Header{QDCount: 1}, Queries: []Query{
-		{QName: "www.test.com.", QType: TypeALL, QClass: Class(ClassIN)},
-	}, Responses: []RR{}}
-	b := PackMsg(expected)
+	cases := []struct {
+		Input string
+		Err   error
+	}{
+		{Input: "", Err: io.ErrShortBuffer},
+		{Input: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", Err: io.ErrShortBuffer},
 
-	actual, n, err := UnpackMsg(b, 0)
-	if !assert.NoError(t, err) {
-		return
+		// Test short buffer by QDCount and ANCount
+		{Input: "\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00", Err: io.ErrShortBuffer},
+		{Input: "\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00", Err: io.ErrShortBuffer},
+
+		// NSCount and ARCount still not implemented
+		// {Input: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00", Err: io.ErrShortBuffer},
+		// {Input: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01", Err: io.ErrShortBuffer},
+
+		{Input: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
 	}
-	if !assert.Equal(t, len(b), n) {
-		return
+	for _, c := range cases {
+		_, n, err := UnpackMsg([]byte(c.Input), 0)
+		assert.Equal(t, c.Err, err)
+		if err == nil {
+			assert.Equal(t, len(c.Input), n)
+		}
 	}
-	assert.Equal(t, expected, actual)
-}
-
-func TestUnpackHeaderShortBuffer(t *testing.T) {
-	b := make([]byte, headerLen-1)
-	_, n, err := unpackHeader(b, 0)
-	assert.Error(t, err)
-	assert.Equal(t, 0, n)
-
-	b = make([]byte, 0, 1)
-	_, n, err = unpackHeader(b, 0)
-	assert.Error(t, err)
-	assert.Equal(t, 0, n)
 }
 
 func TestUnpackHeader(t *testing.T) {
